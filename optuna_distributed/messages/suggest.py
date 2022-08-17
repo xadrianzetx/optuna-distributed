@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class SuggestMessage(Message):
-    """ A request for value suggestions.
+    """A request for value suggestions.
 
     This message is sent by :class:`~optuna_distributed.trial.DistributedTrial` to
     main process asking for value suggestions. Main process provides them by
@@ -31,9 +31,6 @@ class SuggestMessage(Message):
 
     def process(self, study: "Study", manager: "OptimizationManager") -> None:
         trial = Trial(study, self._trial_id)
-        if manager.is_run_repeated(self._trial_id):
-            return
-
         if isinstance(self._distribution, FloatDistribution):
             value = trial.suggest_float(
                 name=self._name,
