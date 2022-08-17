@@ -46,25 +46,18 @@ class DistributedStudy:
     def best_trial(self) -> FrozenTrial:
         return self._study.best_trial
 
-    @classmethod
-    def from_optuna_study(cls, study: Study, client: Optional[Client]) -> "DistributedStudy":
-        pass
-
     def optimize(
         self,
         func: ObjectiveFuncType,
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
-        n_jobs: int = 1,
+        n_jobs: int = -1,
         catch: Tuple[Type[Exception], ...] = (),
         callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
-        """Optimize an objective function using multiple workers.
-
-        Args: TODO
-        """
+        """Optimize an objective function."""
 
         def _objective_wrapper(trial: DistributedTrial) -> None:
             trial.connection.put(RepeatedTrialMessage(trial.trial_id))
@@ -90,6 +83,9 @@ class DistributedStudy:
             finally:
                 trial.connection.close()
 
+        if n_trials is None:
+            raise ValueError("Only finite number of trials supported at the moment.")
+
         manager = (
             DistributedOptimizationManager(self._client, n_trials)
             if self._client is not None
@@ -105,3 +101,7 @@ class DistributedStudy:
 
         finally:
             self._study._storage.remove_session()
+
+
+def from_optuna_study(study: Study) -> DistributedStudy:
+    pass
