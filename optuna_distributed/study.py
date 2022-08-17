@@ -18,6 +18,7 @@ from optuna_distributed.managers import DistributedOptimizationManager
 from optuna_distributed.managers import LocalOptimizationManager
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import FailedMessage
+from optuna_distributed.messages import GenericMessage
 from optuna_distributed.messages import PrunedMessage
 from optuna_distributed.messages import RepeatedTrialMessage
 from optuna_distributed.trial import DistributedTrial
@@ -67,7 +68,9 @@ class DistributedStudy:
 
         def _objective_wrapper(trial: DistributedTrial) -> None:
             trial.connection.put(RepeatedTrialMessage(trial.trial_id))
-            if trial.connection.get():
+            is_repeated = trial.connection.get()
+            assert isinstance(is_repeated, GenericMessage)
+            if is_repeated.data:
                 return
 
             try:
