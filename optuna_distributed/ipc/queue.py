@@ -18,9 +18,9 @@ class Queue(IPCPrimitive):
     after recieving to ensure data is msgpack-encodable.
 
     Args:
-        public_channel:
+        publishing:
             A name of the queue used to publish messages to.
-        private_channel:
+        recieving:
             A name of the queue used to recieve messages from.
         timeout:
             Time (in seconds) to wait for message to be fetched
@@ -29,12 +29,12 @@ class Queue(IPCPrimitive):
 
     def __init__(
         self,
-        public_channel: str,
-        private_channel: Optional[str] = None,
+        publishing: str,
+        recieving: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> None:
-        self._public_channel = public_channel
-        self._private_channel = private_channel
+        self._publishing = publishing
+        self._recieving = recieving
         self._timeout = timeout
         self._publisher: Optional[DaskQueue] = None
         self._subscriber: Optional[DaskQueue] = None
@@ -44,9 +44,9 @@ class Queue(IPCPrimitive):
         if not self._initialized:
             # Lazy initialization, since we have to make sure
             # channels are opened on target machine.
-            self._publisher = DaskQueue(self._public_channel)
-            if self._private_channel is not None:
-                self._subscriber = DaskQueue(self._private_channel)
+            self._publisher = DaskQueue(self._publishing)
+            if self._recieving is not None:
+                self._subscriber = DaskQueue(self._recieving)
             self._initialized = True
 
     def get(self) -> "Message":
