@@ -29,7 +29,7 @@ class EventLoop:
         study:
             An instance of Optuna study.
         manager:
-            An instance of :class:'~optuna_distributed.managers.Manager'.
+            An instance of :class:`~optuna_distributed.managers.Manager`.
         objective:
             An objective function to optimize.
     """
