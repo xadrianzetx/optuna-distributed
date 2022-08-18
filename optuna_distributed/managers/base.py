@@ -91,21 +91,6 @@ class OptimizationManager(ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def is_run_repeated(self, study: "Study", trial_id: int) -> bool:
-        """Indicates whether trial with specified id has already been completed.
-
-        Some backends might allow tasks to be re-run in which case is usefull to
-        check for that case ahead of time.
-
-        Args:
-            study:
-                An instance of Optuna study.
-            trial_id:
-                Trial id to check a status of.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def register_trial_exit(self, trial_id: int) -> None:
         """Informs manager about worker finishing a trial.
 
