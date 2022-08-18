@@ -26,7 +26,7 @@ class OptimizationManager(ABC):
     def create_futures(
         self, study: "Study", objective: Callable[["DistributedTrial"], None]
     ) -> None:
-        """Spawns a set of workers running objective function.
+        """Spawns a set of workers to run objective function.
 
         Args:
             study:
