@@ -16,7 +16,7 @@ from optuna_distributed.messages import SuggestMessage
 
 
 if TYPE_CHECKING:
-    from optuna_distributed.connections import Connection
+    from optuna_distributed.ipc import IPCPrimitive
 
 
 class DistributedTrial:
@@ -29,7 +29,7 @@ class DistributedTrial:
             An instance of :class:'~optuna_distributed.connections.Connection'.
     """
 
-    def __init__(self, trial_id: int, connection: "Connection") -> None:
+    def __init__(self, trial_id: int, connection: "IPCPrimitive") -> None:
         self.trial_id = trial_id
         self.connection = connection
 
