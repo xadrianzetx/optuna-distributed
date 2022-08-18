@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -10,6 +11,7 @@ from typing import TYPE_CHECKING
 from optuna.progress_bar import _ProgressBar
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
@@ -81,6 +83,11 @@ class EventLoop:
 
             except Exception:
                 self.manager.stop_optimization()
+                # TODO(xadrianzetx) Is there a better way to do this in Optuna?
+                states = (TrialState.RUNNING, TrialState.WAITING)
+                trials = self.study.get_trials(deepcopy=False, states=states)
+                for trial in trials:
+                    self.study._storage.set_trial_state_values(trial._trial_id, TrialState.FAIL)
                 raise
 
             progress_bar.update((datetime.now() - time_start).total_seconds())

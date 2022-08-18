@@ -12,6 +12,7 @@ from optuna.exceptions import TrialPruned
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
+from optuna.trial import TrialState
 
 from optuna_distributed.eventloop import EventLoop
 from optuna_distributed.managers import DistributedOptimizationManager
@@ -97,6 +98,10 @@ class DistributedStudy:
 
         except KeyboardInterrupt:
             manager.stop_optimization()
+            states = (TrialState.RUNNING, TrialState.WAITING)
+            trials = self._study.get_trials(deepcopy=False, states=states)
+            for trial in trials:
+                self._study._storage.set_trial_state_values(trial._trial_id, TrialState.FAIL)
             raise
 
         finally:
