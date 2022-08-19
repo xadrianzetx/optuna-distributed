@@ -15,10 +15,10 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class GenericMessage(Message):
+class ResponseMessage(Message):
     """A generic message.
 
-    Generic messages are used by client to pass data back to workers.
+    Response messages are used by client to pass data back to workers.
     These do not carry any code to execute, and should be used as a wrapper
     around data served as response to workers request.
     """

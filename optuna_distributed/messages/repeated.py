@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from optuna_distributed.messages import GenericMessage
+from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import Message
 
 
@@ -24,4 +24,4 @@ class RepeatedTrialMessage(Message):
     def process(self, study: "Study", manager: "OptimizationManager") -> None:
         trial = study._storage.get_trial(self._trial_id)
         conn = manager.get_connection(self._trial_id)
-        conn.put(GenericMessage(self._trial_id, data=trial.state.is_finished()))
+        conn.put(ResponseMessage(self._trial_id, data=trial.state.is_finished()))

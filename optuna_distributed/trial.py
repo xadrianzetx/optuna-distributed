@@ -11,7 +11,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 
-from optuna_distributed.messages import GenericMessage
+from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import SuggestMessage
 
 
@@ -37,7 +37,7 @@ class DistributedTrial:
         message = SuggestMessage(self.trial_id, name, distribution)
         self.connection.put(message)
         response = self.connection.get()
-        assert isinstance(response, GenericMessage)
+        assert isinstance(response, ResponseMessage)
         return response.data
 
     def suggest_float(

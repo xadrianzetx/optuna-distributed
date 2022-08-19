@@ -6,7 +6,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.trial import Trial
 
-from optuna_distributed.messages import GenericMessage
+from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import Message
 
 
@@ -53,4 +53,4 @@ class SuggestMessage(Message):
             raise ValueError()
 
         conn = manager.get_connection(self._trial_id)
-        conn.put(GenericMessage(self._trial_id, value))
+        conn.put(ResponseMessage(self._trial_id, value))
