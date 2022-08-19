@@ -18,6 +18,8 @@ class RepeatedTrialMessage(Message):
     described in https://stackoverflow.com/a/41965766.
     """
 
+    closing = False
+
     def __init__(self, trial_id: int) -> None:
         self._trial_id = trial_id
 

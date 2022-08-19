@@ -23,6 +23,8 @@ class ResponseMessage(Message):
     around data served as response to workers request.
     """
 
+    closing = False
+
     def __init__(self, trial_id: int, data: T) -> None:
         self.trial_id = trial_id
         self.data = data

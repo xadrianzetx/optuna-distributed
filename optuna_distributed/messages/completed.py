@@ -25,6 +25,8 @@ class CompletedMessage(Message):
     of the objective function. Client can then tell study about it.
     """
 
+    closing = True
+
     def __init__(self, trial_id: int, value_or_values: Union[Sequence[float], float]) -> None:
         self._trial_id = trial_id
         self._value_or_values = value_or_values

@@ -17,5 +17,7 @@ class HeartbeatMessage(Message):
     some things are still alive and well.
     """
 
+    closing = False
+
     def process(self, study: "Study", manager: "OptimizationManager") -> None:
         ...

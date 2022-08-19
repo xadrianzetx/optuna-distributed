@@ -24,6 +24,8 @@ class SuggestMessage(Message):
     using regular Optuna suggest APIs and responding via connection provided by worker.
     """
 
+    closing = False
+
     def __init__(self, trial_id: int, name: str, distribution: BaseDistribution) -> None:
         self._trial_id = trial_id
         self._name = name

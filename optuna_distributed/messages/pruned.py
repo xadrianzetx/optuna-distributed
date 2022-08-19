@@ -24,6 +24,8 @@ class PrunedMessage(Message):
     Client can then tell study about it.
     """
 
+    closing = True
+
     def __init__(self, trial_id: int, exception: TrialPruned) -> None:
         self._trial_id = trial_id
         self._exception = exception
