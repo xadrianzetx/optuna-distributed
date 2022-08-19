@@ -26,6 +26,12 @@ class DistributedOptimizationManager(OptimizationManager):
     """Controls optimization process spanning multiple physical machines.
 
     This implementation uses dask as parallel computing backend.
+
+    Args:
+        client:
+            An instance of dask client.
+        n_trials:
+            Number of trials to run.
     """
 
     def __init__(self, client: Client, n_trials: int) -> None:
