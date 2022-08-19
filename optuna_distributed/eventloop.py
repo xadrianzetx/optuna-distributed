@@ -90,7 +90,9 @@ class EventLoop:
                     self.study._storage.set_trial_state_values(trial._trial_id, TrialState.FAIL)
                 raise
 
-            progress_bar.update((datetime.now() - time_start).total_seconds())
+            if message.closing:
+                progress_bar.update((datetime.now() - time_start).total_seconds())
+
             # TODO(xadrianzetx): Stop optimization on timeout here.
             # TODO(xadrianzetx): Call callbacks here.
             if self.manager.should_end_optimization():
