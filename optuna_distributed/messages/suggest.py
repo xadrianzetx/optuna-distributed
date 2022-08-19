@@ -50,7 +50,7 @@ class SuggestMessage(Message):
         elif isinstance(self._distribution, CategoricalDistribution):
             value = trial.suggest_categorical(name=self._name, choices=self._distribution.choices)
         else:
-            raise ValueError()
+            assert False, "Should not reach."
 
         conn = manager.get_connection(self._trial_id)
         conn.put(ResponseMessage(self._trial_id, value))
