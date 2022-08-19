@@ -34,7 +34,7 @@ class CompletedMessage(Message):
     def process(self, study: "Study", manager: "OptimizationManager") -> None:
         trial = Trial(study, self._trial_id)
         try:
-            frozen_trial = study.tell(trial, self._value_or_values)
+            frozen_trial = study.tell(trial, self._value_or_values, skip_if_finished=True)
 
         except Exception:
             frozen_trial = study._storage.get_trial(self._trial_id)
