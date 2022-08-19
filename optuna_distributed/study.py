@@ -39,7 +39,7 @@ class DistributedStudy:
             A dask client.
     """
 
-    def __init__(self, study: Study, client: Optional[Client]) -> None:
+    def __init__(self, study: Study, client: Optional[Client] = None) -> None:
         self._study = study
         self._client = client
 
