@@ -6,8 +6,8 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.trial import Trial
 
-from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import Message
+from optuna_distributed.messages import ResponseMessage
 
 
 if TYPE_CHECKING:

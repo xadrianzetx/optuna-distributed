@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
-from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import Message
+from optuna_distributed.messages import ResponseMessage
 
 
 if TYPE_CHECKING:
