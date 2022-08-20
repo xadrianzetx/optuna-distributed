@@ -20,8 +20,18 @@ _logger = logging.get_logger(__name__)
 class FailedMessage(Message):
     """A failed trial message.
 
-    This message is sent to inform a client about failed execution
-    of the objective function. Client can then tell study about it.
+    This message is sent after objective function has failed while being evaluated
+    and tells study to fail associated trial. Also, if exception that caused objective
+    function to fail is not explicitly ignored by user, it will be re-raised in main
+    process, failing it entirely.
+
+    Args:
+        trial_id:
+            Id of a trial to which the message is referring.
+        exception:
+            Instance of exception that was raised in objective function.
+        exc_info:
+            Information about exception that was raised in objective function.
     """
 
     closing = True

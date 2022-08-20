@@ -21,6 +21,12 @@ class ResponseMessage(Message):
     Response messages are used by client to pass data back to workers.
     These do not carry any code to execute, and should be used as a wrapper
     around data served as response to workers request.
+
+    Args:
+        trial_id:
+            Id of a trial to which the message is referring.
+        data:
+            Serializable data that should be carried as a part of response.
     """
 
     closing = False

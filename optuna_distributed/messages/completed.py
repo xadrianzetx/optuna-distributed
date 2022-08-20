@@ -21,8 +21,15 @@ _logger = logging.get_logger(__name__)
 class CompletedMessage(Message):
     """A completed trial message.
 
-    This message is sent to inform a client about successfull execution
-    of the objective function. Client can then tell study about it.
+    This message is sent after objective function has been successfully evaluated
+    and tells study about objective value (in case of single objective optimization)
+    or sequence of objective values (in case of multi-objective optimization).
+
+    Args:
+        trial_id:
+            Id of a trial to which the message is referring.
+        value_or_values:
+            Objective value or sequence of objective values.
     """
 
     closing = True

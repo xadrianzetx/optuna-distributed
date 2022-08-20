@@ -16,6 +16,10 @@ class RepeatedTrialMessage(Message):
     This message is sent by worker to confirm that it's not about
     to re-run a completed trial. This is a safeguard against situation
     described in https://stackoverflow.com/a/41965766.
+
+    Args:
+        trial_id:
+            Id of a trial to which the message is referring.
     """
 
     closing = False

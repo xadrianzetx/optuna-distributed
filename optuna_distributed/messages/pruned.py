@@ -20,8 +20,14 @@ _logger = logging.get_logger(__name__)
 class PrunedMessage(Message):
     """A pruned trial message.
 
-    This message is sent to inform a client about pruned trial.
-    Client can then tell study about it.
+    This message is sent after :obj:`TrialPruned` exception has been rised
+    in objective function and tells study to set associated trial to pruned state.
+
+    Args:
+        trial_id:
+            Id of a trial to which the message is referring.
+        exception:
+            Instance of :obj:`TrialPruned` exception.
     """
 
     closing = True
