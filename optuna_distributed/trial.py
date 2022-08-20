@@ -208,10 +208,7 @@ class DistributedTrial:
         https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.should_prune
         """
         message = ShouldPruneMessage(self.trial_id)
-        self.connection.put(message)
-        response = self.connection.get()
-        assert isinstance(response, ResponseMessage)
-        return response.data
+        return self._send_message_and_wait_response(message)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set user attributes to the trial.
