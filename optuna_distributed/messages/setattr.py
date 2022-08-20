@@ -1,3 +1,4 @@
+from enum import auto
 from enum import Enum
 from typing import Any
 from typing import TYPE_CHECKING
@@ -12,8 +13,8 @@ if TYPE_CHECKING:
 
 
 class AttributeType(Enum):
-    USER = "user"
-    SYSTEM = "system"
+    USER = auto()
+    SYSTEM = auto()
 
 
 class SetAttributeMessage(Message):
