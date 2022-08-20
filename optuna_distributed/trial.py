@@ -22,7 +22,14 @@ if TYPE_CHECKING:
 
 
 class DistributedTrial:
-    """Version of Optuna Trial designed to run on process or machine separate to the client.
+    """A trial is a process of evaluating an objective function.
+
+    This is a version of Optuna trial designed to run in process or machine separate
+    to the study and its resources. Communication with study is held via messaging
+    system, allowing remote workers to use standard Optuna trial APIs.
+
+    For complete documentation, please refer to:
+    https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna-trial-trial
 
     Args:
         trial_id:
