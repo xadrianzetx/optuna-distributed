@@ -17,10 +17,13 @@ from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import SetAttributeMessage
 from optuna_distributed.messages import ShouldPruneMessage
 from optuna_distributed.messages import SuggestMessage
+from optuna_distributed.messages import TrialProperty
+from optuna_distributed.messages import TrialPropertyMessage
 
 
 if TYPE_CHECKING:
     from optuna_distributed.ipc import IPCPrimitive
+    from optuna_distributed.messages.base import Message
 
 
 class DistributedTrial:
@@ -46,6 +49,13 @@ class DistributedTrial:
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
         message = SuggestMessage(self.trial_id, name, distribution)
+        return self._send_message_and_wait_response(message)
+
+    def _get_property(self, property: TrialProperty) -> Any:
+        message = TrialPropertyMessage(self.trial_id, property)
+        return self._send_message_and_wait_response(message)
+
+    def _send_message_and_wait_response(self, message: "Message") -> Any:
         self.connection.put(message)
         response = self.connection.get()
         assert isinstance(response, ResponseMessage)
@@ -235,24 +245,30 @@ class DistributedTrial:
 
     @property
     def params(self) -> Dict[str, Any]:
-        raise NotImplementedError
+        """Return parameters to be optimized."""
+        return self._get_property(TrialProperty.PARAMS)
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
-        raise NotImplementedError
+        """Return distributions of parameters to be optimized."""
+        return self._get_property(TrialProperty.DISTRIBUTIONS)
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
-        raise NotImplementedError
+        """Return user attributes."""
+        return self._get_property(TrialProperty.USER_ATTRS)
 
     @property
     def system_attrs(self) -> Dict[str, Any]:
-        raise NotImplementedError
+        """Return system attributes."""
+        return self._get_property(TrialProperty.SYSTEM_ATTRS)
 
     @property
     def datetime_start(self) -> Optional[datetime.datetime]:
-        raise NotImplementedError
+        """Return start datetime."""
+        return self._get_property(TrialProperty.DATETIME_START)
 
     @property
     def number(self) -> int:
-        raise NotImplementedError
+        """Return trial's number which is consecutive and unique in a study."""
+        return self._get_property(TrialProperty.NUMBER)
