@@ -14,7 +14,7 @@ from optuna.distributions import IntDistribution
 from optuna_distributed.messages import ReportMessage
 from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import SuggestMessage
-from optuna_distributed.messages.shouldprune import ShouldPruneMessage
+from optuna_distributed.messages import ShouldPruneMessage
 
 
 if TYPE_CHECKING:
