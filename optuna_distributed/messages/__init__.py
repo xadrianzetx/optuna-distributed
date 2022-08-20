@@ -4,7 +4,9 @@ from optuna_distributed.messages.failed import FailedMessage
 from optuna_distributed.messages.heartbeat import HeartbeatMessage
 from optuna_distributed.messages.pruned import PrunedMessage
 from optuna_distributed.messages.repeated import RepeatedTrialMessage
+from optuna_distributed.messages.report import ReportMessage
 from optuna_distributed.messages.response import ResponseMessage
+from optuna_distributed.messages.shouldprune import ShouldPruneMessage
 from optuna_distributed.messages.suggest import SuggestMessage
 
 
@@ -17,4 +19,6 @@ __all__ = [
     "FailedMessage",
     "RepeatedTrialMessage",
     "PrunedMessage",
+    "ReportMessage",
+    "ShouldPruneMessage",
 ]

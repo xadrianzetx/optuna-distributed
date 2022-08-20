@@ -11,8 +11,10 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 
+from optuna_distributed.messages import ReportMessage
 from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import SuggestMessage
+from optuna_distributed.messages.shouldprune import ShouldPruneMessage
 
 
 if TYPE_CHECKING:
@@ -72,10 +74,31 @@ class DistributedTrial:
         return self._suggest(name, distribution)
 
     def report(self, value: float, step: int) -> None:
-        raise NotImplementedError
+        """Report an objective function value for a given step.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.report
+
+        Args:
+            value:
+                An intermediate value returned from the objective function.
+            step:
+                Step of the trial (e.g., Epoch of neural network training).
+        """
+        message = ReportMessage(self.trial_id, value, step)
+        self.connection.put(message)
 
     def should_prune(self) -> bool:
-        raise NotImplementedError
+        """Suggest whether the trial should be pruned or not.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.should_prune
+        """
+        message = ShouldPruneMessage(self.trial_id)
+        self.connection.put(message)
+        response = self.connection.get()
+        assert isinstance(response, ResponseMessage)
+        return response.data
 
     def set_user_attr(self, key: str, value: Any) -> None:
         raise NotImplementedError
