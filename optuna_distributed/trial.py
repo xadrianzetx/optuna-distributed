@@ -51,25 +51,119 @@ class DistributedTrial:
         step: Optional[float] = None,
         log: bool = False,
     ) -> float:
+        """Suggest a value for the floating point parameter.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.suggest_float
+
+        Args:
+            name:
+                A parameter name.
+            low:
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
+                ``low`` must be less than or equal to ``high``. If ``log`` is :obj:`True`,
+                ``low`` must be larger than 0.
+            high:
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
+                ``high`` must be greater than or equal to ``low``.
+            step:
+                A step of discretization.
+            log:
+                A flag to sample the value from the log domain or not.
+                If ``log`` is true, the value is sampled from the range in the log domain.
+                Otherwise, the value is sampled from the range in the linear domain.
+        """
         distribution = FloatDistribution(low, high, step=step, log=log)
         return self._suggest(name, distribution)
 
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
+        """Suggest a value for the continuous parameter.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.suggest_uniform
+
+        Args:
+            name:
+                A parameter name.
+            low:
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
+            high:
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
+        """
         return self.suggest_float(name, low, high)
 
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
+        """Suggest a value for the continuous parameter.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.suggest_loguniform
+
+        Args:
+            name:
+                A parameter name.
+            low:
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
+            high:
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
+        """
         return self.suggest_float(name, low, high, log=True)
 
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
+        """Suggest a value for the discrete parameter.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.suggest_discrete_uniform
+
+        Args:
+            name:
+                A parameter name.
+            low:
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
+            high:
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
+            q:
+                A step of discretization.
+        """
         return self.suggest_float(name, low, high, step=q)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
+        """Suggest a value for the integer parameter.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.suggest_int
+
+        Args:
+            name:
+                A parameter name.
+            low:
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
+                ``low`` must be less than or equal to ``high``. If ``log`` is :obj:`True`,
+                ``low`` must be larger than 0.
+            high:
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
+                ``high`` must be greater than or equal to ``low``.
+            step:
+                A step of discretization.
+            log:
+                A flag to sample the value from the log domain or not.
+        """
         distribution = IntDistribution(low, high, log=log, step=step)
         return self._suggest(name, distribution)
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
     ) -> CategoricalChoiceType:
+        """Suggest a value for the categorical parameter.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.suggest_categorical
+
+        Args:
+            name:
+                A parameter name.
+            choices:
+                Parameter value candidates.
+        """
         distribution = CategoricalDistribution(choices)
         return self._suggest(name, distribution)
 
