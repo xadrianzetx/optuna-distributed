@@ -11,8 +11,10 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 
+from optuna_distributed.messages import AttributeType
 from optuna_distributed.messages import ReportMessage
 from optuna_distributed.messages import ResponseMessage
+from optuna_distributed.messages import SetAttributeMessage
 from optuna_distributed.messages import ShouldPruneMessage
 from optuna_distributed.messages import SuggestMessage
 
@@ -202,10 +204,34 @@ class DistributedTrial:
         return response.data
 
     def set_user_attr(self, key: str, value: Any) -> None:
-        raise NotImplementedError
+        """Set user attributes to the trial.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.set_user_attr
+
+        Args:
+            key:
+                A key string of the attribute.
+            value:
+                A value of the attribute. The value should be able to serialize with pickle.
+        """
+        message = SetAttributeMessage(self.trial_id, AttributeType.USER, key, value)
+        self.connection.put(message)
 
     def set_system_attr(self, key: str, value: Any) -> None:
-        raise NotImplementedError
+        """set system attributes to the trial.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html#optuna.trial.Trial.set_system_attr
+
+        Args:
+            key:
+                A key string of the attribute.
+            value:
+                A value of the attribute. The value should be able to serialize with pickle.
+        """
+        message = SetAttributeMessage(self.trial_id, AttributeType.SYSTEM, key, value)
+        self.connection.put(message)
 
     @property
     def params(self) -> Dict[str, Any]:

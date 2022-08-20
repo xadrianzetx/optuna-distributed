@@ -6,6 +6,8 @@ from optuna_distributed.messages.pruned import PrunedMessage
 from optuna_distributed.messages.repeated import RepeatedTrialMessage
 from optuna_distributed.messages.report import ReportMessage
 from optuna_distributed.messages.response import ResponseMessage
+from optuna_distributed.messages.setattr import AttributeType
+from optuna_distributed.messages.setattr import SetAttributeMessage
 from optuna_distributed.messages.shouldprune import ShouldPruneMessage
 from optuna_distributed.messages.suggest import SuggestMessage
 
@@ -21,4 +23,6 @@ __all__ = [
     "PrunedMessage",
     "ReportMessage",
     "ShouldPruneMessage",
+    "SetAttributeMessage",
+    "AttributeType",
 ]
