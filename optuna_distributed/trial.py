@@ -28,7 +28,7 @@ class DistributedTrial:
         trial_id:
             A trial ID that is automatically generated.
         connection:
-            An instance of :class:'~optuna_distributed.connections.Connection'.
+            An instance of :class:`~optuna_distributed.connections.Connection`.
     """
 
     def __init__(self, trial_id: int, connection: "IPCPrimitive") -> None:
