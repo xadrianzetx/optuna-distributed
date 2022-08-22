@@ -30,7 +30,7 @@ setup(
     url="https://github.com/xadrianzetx/optuna-distributed",
     project_urls={
         "Source": "https://github.com/xadrianzetx/optuna-distributed",
-        "Bug Tracker": "https://github.com/xadrianzetx/optuna-fastcontour/issues",
+        "Bug Tracker": "https://github.com/xadrianzetx/optuna-distributed/issues",
     },
     packages=find_packages(exclude=["tests"]),
     lassifiers=[
