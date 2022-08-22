@@ -1,5 +1,4 @@
 from typing import Any
-from typing import Optional
 from unittest.mock import MagicMock
 
 from optuna.exceptions import TrialPruned
