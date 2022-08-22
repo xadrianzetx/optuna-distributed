@@ -1,3 +1,5 @@
+from typing import Any
+from typing import Optional
 from unittest.mock import MagicMock
 
 from optuna.exceptions import TrialPruned
@@ -8,6 +10,7 @@ import pytest
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import FailedMessage
 from optuna_distributed.messages import HeartbeatMessage
+from optuna_distributed.messages import Message
 from optuna_distributed.messages import PrunedMessage
 from optuna_distributed.messages import RepeatedTrialMessage
 from optuna_distributed.messages import ReportMessage
@@ -17,7 +20,38 @@ from optuna_distributed.messages import TrialProperty
 from optuna_distributed.messages import TrialPropertyMessage
 
 
-def test_completed_with_correct_value(study: Study, optimization_manager: MagicMock) -> None:
+class MockConnection:
+    def __init__(self, manager: "MockOptimizationManager") -> None:
+        self._manager = manager
+
+    def put(self, message: Message) -> None:
+        assert isinstance(message, ResponseMessage)
+        self._manager.message_response = message.data
+
+
+class MockOptimizationManager:
+    def __init__(self) -> None:
+        self.trial_exit_called = False
+        self.message_response = Optional[Any]
+
+    def register_trial_exit(self, trial_id: int) -> None:
+        self.trial_exit_called = True
+
+    def get_connection(self, trial_id: int) -> MockConnection:
+        return MockConnection(self)
+
+
+@pytest.fixture
+def manager() -> Any:
+    # FIXME: Type annotations are too relaxed here.
+    return MockOptimizationManager()
+
+
+def _message_responds_with(value: Any, manager: Any) -> bool:
+    return manager.message_response == value
+
+
+def test_completed_with_correct_value(study: Study, manager: Any) -> None:
     msg = CompletedMessage(0, 0.0)
     assert msg.closing
     msg.process(study, optimization_manager)
