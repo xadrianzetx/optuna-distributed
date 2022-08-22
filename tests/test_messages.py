@@ -54,38 +54,38 @@ def _message_responds_with(value: Any, manager: Any) -> bool:
 def test_completed_with_correct_value(study: Study, manager: Any) -> None:
     msg = CompletedMessage(0, 0.0)
     assert msg.closing
-    msg.process(study, optimization_manager)
-    assert optimization_manager.register_trial_exit.called_once_with(0)
+    msg.process(study, manager)
+    assert manager.trial_exit_called
     trial = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
     assert len(trial) == 1
     assert trial[0].value == 0.0
 
 
-def test_completed_with_incorrect_values(study: Study, optimization_manager: MagicMock) -> None:
+def test_completed_with_incorrect_values(study: Study, manager: Any) -> None:
     msg = CompletedMessage(0, "foo")  # type: ignore
     assert msg.closing
     with pytest.warns():
-        msg.process(study, optimization_manager)
-    assert optimization_manager.register_trial_exit.called_once_with(0)
+        msg.process(study, manager)
+    assert manager.trial_exit_called
 
 
-def test_pruned(study: Study, optimization_manager: MagicMock) -> None:
+def test_pruned(study: Study, manager: Any) -> None:
     msg = PrunedMessage(0, TrialPruned())
     assert msg.closing
-    msg.process(study, optimization_manager)
-    assert optimization_manager.register_trial_exit.called_once_with(0)
+    msg.process(study, manager)
+    assert manager.trial_exit_called
     trial = study.get_trials(deepcopy=False, states=(TrialState.PRUNED,))
     assert len(trial) == 1
 
 
-def test_failed(study: Study, optimization_manager: MagicMock) -> None:
+def test_failed(study: Study, manager: Any) -> None:
     exc = ValueError("foo")
     msg = FailedMessage(0, exc, exc_info=MagicMock())
     assert msg.closing
     with pytest.raises(ValueError):
-        msg.process(study, optimization_manager)
+        msg.process(study, manager)
 
-    assert optimization_manager.register_trial_exit.called_once_with(0)
+    assert manager.trial_exit_called
     trial = study.get_trials(deepcopy=False, states=(TrialState.FAIL,))
     assert len(trial) == 1
 
@@ -112,41 +112,38 @@ def test_response() -> None:
         ("number", TrialProperty.NUMBER),
     ],
 )
-def test_trial_property(
-    study: Study, optimization_manager: MagicMock, name: str, property: TrialProperty
-) -> None:
+def test_trial_property(study: Study, manager: Any, name: str, property: TrialProperty) -> None:
     msg = TrialPropertyMessage(0, property)
     assert not msg.closing
-    msg.process(study, optimization_manager)
+    msg.process(study, manager)
     expected = getattr(study.get_trials(deepcopy=False)[0], name)
-    assert optimization_manager.get_connection.return_value_called_once_with(expected)
+    assert _message_responds_with(expected, manager=manager)
 
 
-def test_should_prune(study: Study, optimization_manager: MagicMock) -> None:
+def test_should_prune(study: Study, manager: Any) -> None:
     msg = ShouldPruneMessage(0)
     assert not msg.closing
-    msg.process(study, optimization_manager)
+    msg.process(study, manager)
 
-    assert optimization_manager.get_connection.called_once_with(0)
-    assert optimization_manager.get_connection.return_value.called_once_with(False)
+    assert _message_responds_with(False, manager=manager)
     trial = study.get_trials(deepcopy=False, states=(TrialState.RUNNING,))
     assert len(trial) == 1
     assert trial[0]._trial_id == 0
 
 
-def test_repeated_trial(study: Study, optimization_manager: MagicMock) -> None:
+def test_repeated_trial(study: Study, manager: Any) -> None:
     msg = RepeatedTrialMessage(0)
     assert not msg.closing
 
     study.tell(0, state=TrialState.PRUNED)
-    msg.process(study, optimization_manager)
-    assert optimization_manager.get_connection.return_value.called_once_with(True)
+    msg.process(study, manager)
+    assert _message_responds_with(True, manager=manager)
 
 
-def test_report_intermediate(study: Study, optimization_manager: MagicMock) -> None:
+def test_report_intermediate(study: Study, manager: Any) -> None:
     msg = ReportMessage(0, value=0.0, step=1)
     assert not msg.closing
 
-    msg.process(study, optimization_manager)
+    msg.process(study, manager)
     trial = study.get_trials(deepcopy=False)[0]
     assert trial.intermediate_values[1] == 0.0
