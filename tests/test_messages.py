@@ -32,7 +32,7 @@ class MockConnection:
 class MockOptimizationManager:
     def __init__(self) -> None:
         self.trial_exit_called = False
-        self.message_response = Optional[Any]
+        self.message_response = None
 
     def register_trial_exit(self, trial_id: int) -> None:
         self.trial_exit_called = True
