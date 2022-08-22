@@ -9,6 +9,9 @@ from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import FailedMessage
 from optuna_distributed.messages import HeartbeatMessage
 from optuna_distributed.messages import PrunedMessage
+from optuna_distributed.messages import RepeatedTrialMessage
+from optuna_distributed.messages import ReportMessage
+from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import ShouldPruneMessage
 from optuna_distributed.messages import TrialProperty
 from optuna_distributed.messages import TrialPropertyMessage
@@ -58,6 +61,12 @@ def test_heartbeat() -> None:
     assert not msg.closing
 
 
+def test_response() -> None:
+    msg = ResponseMessage(0, data="foo")
+    assert not msg.closing
+    assert msg.data == "foo"
+
+
 @pytest.mark.parametrize(
     "name,property",
     [
@@ -89,3 +98,21 @@ def test_should_prune(study: Study, optimization_manager: MagicMock) -> None:
     trial = study.get_trials(deepcopy=False, states=(TrialState.RUNNING,))
     assert len(trial) == 1
     assert trial[0]._trial_id == 0
+
+
+def test_repeated_trial(study: Study, optimization_manager: MagicMock) -> None:
+    msg = RepeatedTrialMessage(0)
+    assert not msg.closing
+
+    study.tell(0, state=TrialState.PRUNED)
+    msg.process(study, optimization_manager)
+    assert optimization_manager.get_connection.return_value.called_once_with(True)
+
+
+def test_report_intermediate(study: Study, optimization_manager: MagicMock) -> None:
+    msg = ReportMessage(0, value=0.0, step=1)
+    assert not msg.closing
+
+    msg.process(study, optimization_manager)
+    trial = study.get_trials(deepcopy=False)[0]
+    assert trial.intermediate_values[1] == 0.0
