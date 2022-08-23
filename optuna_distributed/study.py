@@ -26,6 +26,7 @@ from optuna_distributed.managers import DistributedOptimizationManager
 from optuna_distributed.managers import LocalOptimizationManager
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import FailedMessage
+from optuna_distributed.messages import Message
 from optuna_distributed.messages import PrunedMessage
 from optuna_distributed.messages import RepeatedTrialMessage
 from optuna_distributed.messages import ResponseMessage
@@ -36,7 +37,8 @@ if TYPE_CHECKING:
     import pandas as pd
 
 
-ObjectiveFuncType = Callable[[Trial], Union[float, Sequence[float]]]
+ObjectiveFuncType = Callable[[DistributedTrial], Union[float, Sequence[float]]]
+DistributableFuncType = Callable[[DistributedTrial], None]
 
 
 class DistributedStudy:
@@ -107,41 +109,17 @@ class DistributedStudy:
         show_progress_bar: bool = False,
     ) -> None:
         """Optimize an objective function."""
-
-        def _objective_wrapper(trial: DistributedTrial) -> None:
-            trial.connection.put(RepeatedTrialMessage(trial.trial_id))
-            is_repeated = trial.connection.get()
-            assert isinstance(is_repeated, ResponseMessage)
-            if is_repeated.data:
-                return
-
-            try:
-                value_or_values = func(trial)
-                message = CompletedMessage(trial.trial_id, value_or_values)
-                trial.connection.put(message)
-
-            except TrialPruned as e:
-                message = PrunedMessage(trial.trial_id, e)
-                trial.connection.put(message)
-
-            except Exception as e:
-                exc_info = sys.exc_info()
-                message = FailedMessage(trial.trial_id, e, exc_info)
-                trial.connection.put(message)
-
-            finally:
-                trial.connection.close()
-
         if n_trials is None:
             raise ValueError("Only finite number of trials supported at the moment.")
 
+        distributable = _wrap_objective(func)
         manager = (
             DistributedOptimizationManager(self._client, n_trials)
             if self._client is not None
             else LocalOptimizationManager(n_trials, n_jobs)
         )
         try:
-            event_loop = EventLoop(self._study, manager, _objective_wrapper)
+            event_loop = EventLoop(self._study, manager, distributable)
             event_loop.run(n_trials, timeout, catch, callbacks, show_progress_bar)
 
         except KeyboardInterrupt:
@@ -206,6 +184,35 @@ class DistributedStudy:
 
     def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
         pass
+
+
+def _wrap_objective(func: ObjectiveFuncType) -> DistributableFuncType:
+    def _objective_wrapper(trial: DistributedTrial) -> None:
+        trial.connection.put(RepeatedTrialMessage(trial.trial_id))
+        is_repeated = trial.connection.get()
+        assert isinstance(is_repeated, ResponseMessage)
+        message: Message
+        if is_repeated.data:
+            return
+
+        try:
+            value_or_values = func(trial)
+            message = CompletedMessage(trial.trial_id, value_or_values)
+            trial.connection.put(message)
+
+        except TrialPruned as e:
+            message = PrunedMessage(trial.trial_id, e)
+            trial.connection.put(message)
+
+        except Exception as e:
+            exc_info = sys.exc_info()
+            message = FailedMessage(trial.trial_id, e, exc_info)
+            trial.connection.put(message)
+
+        finally:
+            trial.connection.close()
+
+    return _objective_wrapper
 
 
 def from_optuna_study(study: Study) -> DistributedStudy:

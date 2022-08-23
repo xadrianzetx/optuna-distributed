@@ -16,7 +16,7 @@ from optuna.trial import TrialState
 
 if TYPE_CHECKING:
     from optuna_distributed.managers import OptimizationManager
-    from optuna_distributed.trial import DistributedTrial
+    from optuna_distributed.study import DistributableFuncType
 
 
 class EventLoop:
@@ -40,7 +40,7 @@ class EventLoop:
         self,
         study: Study,
         manager: "OptimizationManager",
-        objective: Callable[["DistributedTrial"], None],
+        objective: "DistributableFuncType",
     ) -> None:
         self.study = study
         self.manager = manager
