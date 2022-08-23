@@ -164,7 +164,7 @@ def test_set_user_attributes(study: Study, manager: Any) -> None:
 
 
 def test_set_system_attributes(study: Study, manager: Any) -> None:
-    msg = SetAttributeMessage(0, kind="system", value=0, key="foo")
+    msg = SetAttributeMessage(0, value=0, key="foo", kind="system")
     assert not msg.closing
 
     msg.process(study, manager)
