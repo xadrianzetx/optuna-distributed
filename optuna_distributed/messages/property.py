@@ -1,5 +1,5 @@
-from enum import auto
 from enum import Enum
+from enum import auto
 from typing import TYPE_CHECKING
 
 from optuna.trial import Trial
