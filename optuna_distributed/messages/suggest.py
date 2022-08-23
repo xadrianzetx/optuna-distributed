@@ -22,6 +22,14 @@ class SuggestMessage(Message):
     This message is sent by :class:`~optuna_distributed.trial.DistributedTrial` to
     main process asking for value suggestions. Main process provides them by
     using regular Optuna suggest APIs and responding via connection provided by worker.
+
+    Args:
+        trial_id:
+            Id of a trial to which the message is referring.
+        name:
+            A parameter name.
+        distribution:
+            A parameter distribution.
     """
 
     closing = False
