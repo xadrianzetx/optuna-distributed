@@ -1,6 +1,10 @@
 from typing import Any
 from unittest.mock import MagicMock
 
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.exceptions import TrialPruned
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -14,7 +18,9 @@ from optuna_distributed.messages import PrunedMessage
 from optuna_distributed.messages import RepeatedTrialMessage
 from optuna_distributed.messages import ReportMessage
 from optuna_distributed.messages import ResponseMessage
+from optuna_distributed.messages import SetAttributeMessage
 from optuna_distributed.messages import ShouldPruneMessage
+from optuna_distributed.messages import SuggestMessage
 from optuna_distributed.messages import TrialProperty
 from optuna_distributed.messages import TrialPropertyMessage
 
@@ -146,3 +152,41 @@ def test_report_intermediate(study: Study, manager: Any) -> None:
     msg.process(study, manager)
     trial = study.get_trials(deepcopy=False)[0]
     assert trial.intermediate_values[1] == 0.0
+
+
+def test_set_user_attributes(study: Study, manager: Any) -> None:
+    msg = SetAttributeMessage(0, key="foo", value=0, kind="user")
+    assert not msg.closing
+
+    msg.process(study, manager)
+    trial = study.get_trials(deepcopy=False)[0]
+    assert trial.user_attrs["foo"] == 0
+
+
+def test_set_system_attributes(study: Study, manager: Any) -> None:
+    msg = SetAttributeMessage(0, kind="system", value=0, key="foo")
+    assert not msg.closing
+
+    msg.process(study, manager)
+    trial = study.get_trials(deepcopy=False)[0]
+    assert trial.system_attrs["foo"] == 0
+
+
+@pytest.mark.parametrize(
+    "distribution",
+    [
+        FloatDistribution(low=0.0, high=1.0),
+        IntDistribution(low=0, high=1),
+        CategoricalDistribution(choices=["foo", "bar"]),
+    ],
+)
+def test_suggest(study: Study, manager: Any, distribution: BaseDistribution) -> None:
+    msg = SuggestMessage(0, name="x", distribution=distribution)
+    assert not msg.closing
+
+    msg.process(study, manager)
+    trial = study.get_trials(deepcopy=False)[0]
+    assert "x" in trial.distributions
+    assert trial.distributions["x"] == distribution
+    assert "x" in trial.params
+    assert _message_responds_with(trial.params["x"], manager=manager)
