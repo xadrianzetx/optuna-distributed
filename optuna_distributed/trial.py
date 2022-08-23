@@ -11,7 +11,6 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 
-from optuna_distributed.messages import AttributeType
 from optuna_distributed.messages import ReportMessage
 from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import SetAttributeMessage
@@ -222,7 +221,7 @@ class DistributedTrial:
             value:
                 A value of the attribute. The value should be able to serialize with pickle.
         """
-        message = SetAttributeMessage(self.trial_id, AttributeType.USER, key, value)
+        message = SetAttributeMessage(self.trial_id, key, value, kind="user")
         self.connection.put(message)
 
     def set_system_attr(self, key: str, value: Any) -> None:
@@ -237,7 +236,7 @@ class DistributedTrial:
             value:
                 A value of the attribute. The value should be able to serialize with pickle.
         """
-        message = SetAttributeMessage(self.trial_id, AttributeType.SYSTEM, key, value)
+        message = SetAttributeMessage(self.trial_id, key, value, kind="system")
         self.connection.put(message)
 
     @property
