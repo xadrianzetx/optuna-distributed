@@ -58,44 +58,64 @@ class DistributedStudy:
 
     @property
     def best_params(self) -> Dict[str, Any]:
-        pass
+        """Return parameters of the best trial in the study."""
+        return self._study.best_params
 
     @property
     def best_value(self) -> float:
-        pass
+        """Return the best objective value in the study."""
+        return self._study.best_value
 
     @property
     def best_trial(self) -> FrozenTrial:
+        """Return the best trial in the study."""
         return self._study.best_trial
 
     @property
     def best_trials(self) -> List[FrozenTrial]:
-        pass
+        """Return trials located at the Pareto front in the study."""
+        return self._study.best_trials
 
     @property
     def direction(self) -> StudyDirection:
-        pass
+        """Return the direction of the study."""
+        return self._study.direction
 
     @property
     def directions(self) -> List[StudyDirection]:
-        pass
+        """Return the directions of the study."""
+        return self._study.directions
 
     @property
     def trials(self) -> List[FrozenTrial]:
-        pass
+        """Return all trials in the study."""
+        return self._study.trials
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
-        pass
+        """Return user attributes."""
+        return self._study.user_attrs
 
     @property
     def system_attrs(self) -> Dict[str, Any]:
-        pass
+        """Return system attributes."""
+        return self._study.system_attrs
 
     def get_trials(
         self, deepcopy: bool = True, states: Optional[Container[TrialState]] = None
     ) -> List[FrozenTrial]:
-        pass
+        """Return all trials in the study.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.get_trials
+
+        Args:
+            deepcopy:
+                Flag to control whether to apply ``copy.deepcopy()`` to the trials.
+            states:
+                Trial states to filter on. If :obj:`None`, include all states.
+        """
+        return self._study.get_trials(deepcopy, states)
 
     def optimize(
         self,
@@ -105,10 +125,39 @@ class DistributedStudy:
         n_jobs: int = -1,
         catch: Tuple[Type[Exception], ...] = (),
         callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
-        gc_after_trial: bool = False,
         show_progress_bar: bool = False,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
-        """Optimize an objective function."""
+        """Optimize an objective function.
+
+        Optimization is done by choosing a suitable set of hyperparameter values from a given
+        range. If dask client has been specified, evaluations of objective function (trials)
+        will be distributed among available workers, otherwise parallelism is process based.
+
+        For additional notes on some args, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize
+
+        Args:
+            func:
+                A callable that implements objective function.
+            n_trials:
+                The number of trials to run in total.
+            timeout:
+                Stop study after the given number of second(s). Currently noop.
+            n_jobs:
+                The number of parallel jobs when using multiprocessing backend. Values less than
+                one or greater than :obj:`multiprocessing.cpu_count()` will default to number of
+                logical CPU cores available.
+            catch:
+                A study continues to run even when a trial raises one of the exceptions specified
+                in this argument. Currently noop.
+            callbacks:
+                List of callback functions that are invoked at the end of each trial. Currently
+                not supported.
+            show_progress_bar:
+                Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
+        """
         if n_trials is None:
             raise ValueError("Only finite number of trials supported at the moment.")
 
@@ -134,7 +183,16 @@ class DistributedStudy:
             self._study._storage.remove_session()
 
     def ask(self, fixed_distributions: Optional[Dict[str, BaseDistribution]] = None) -> Trial:
-        pass
+        """Create a new trial from which hyperparameters can be suggested.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.ask
+
+        Args:
+            fixed_distributions:
+                A dictionary containing the parameter names and parameter's distributions.
+        """
+        return self._study.ask(fixed_distributions)
 
     def tell(
         self,
@@ -143,13 +201,48 @@ class DistributedStudy:
         state: Optional[TrialState] = None,
         skip_if_finished: bool = False,
     ) -> FrozenTrial:
-        pass
+        """Finish a trial created with :func:`~optuna_distributed.study.DistributedStudy.ask`.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.tell
+
+        Args:
+            trial:
+                A :obj:`optuna.trial.Trial` object or a trial number.
+            values:
+                Optional objective value or a sequence of such values in case the study is used
+                for multi-objective optimization.
+            state:
+                State to be reported.
+            skip_if_finished:
+                Flag to control whether exception should be raised when values for already
+                finished trial are told.
+        """
+        return self._study.tell(trial, values, state, skip_if_finished)
 
     def set_user_attr(self, key: str, value: Any) -> None:
-        pass
+        """Set a user attribute to the study.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.set_user_attr
+
+        Args:
+            key: A key string of the attribute.
+            value: A value of the attribute. The value should be JSON serializable.
+        """
+        self._study.set_user_attr(key, value)
 
     def set_system_attr(self, key: str, value: Any) -> None:
-        pass
+        """Set a system attribute to the study.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.set_system_attr
+
+        Args:
+            key: A key string of the attribute.
+            value: A value of the attribute. The value should be JSON serializable
+        """
+        self._study.set_system_attr(key, value)
 
     def trials_dataframe(
         self,
@@ -166,10 +259,27 @@ class DistributedStudy:
         ),
         multi_index: bool = False,
     ) -> "pd.DataFrame":
-        pass
+        """Export trials as a pandas DataFrame.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.trials_dataframe
+
+        Args:
+            attrs:
+                Specifies field names of :obj:`optuna.trial.FrozenTrial` to include them to a
+                DataFrame of trials.
+            multi_index:
+                Specifies whether the returned DataFrame employs MultiIndex or not.
+        """
+        return self._study.trials_dataframe(attrs, multi_index)
 
     def stop(self) -> None:
-        pass
+        """Exit from the current optimization loop after the running trials finish.
+
+        This method is effectively a noop, sice there is no way to reach study from the
+        objective function at the moment. TODO(xadrianzetx) Implement this.
+        """
+        self._study.stop()
 
     def enqueue_trial(
         self,
@@ -177,13 +287,42 @@ class DistributedStudy:
         user_attrs: Optional[Dict[str, Any]] = None,
         skip_if_exists: bool = False,
     ) -> None:
-        pass
+        """Enqueue a trial with given parameter values.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.enqueue_trial
+
+        Args:
+            params:
+                Parameter values to pass your objective function.
+            user_attrs:
+                A dictionary of user-specific attributes other than :obj:`params`.
+            skip_if_exists:
+                When :obj:`True`, prevents duplicate trials from being enqueued again.
+        """
+        self._study.enqueue_trial(params, user_attrs, skip_if_exists)
 
     def add_trial(self, trial: FrozenTrial) -> None:
-        pass
+        """Add trial to study.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.add_trial
+
+        Args:
+            trial: Trial to add.
+        """
+        self._study.add_trial(trial)
 
     def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
-        pass
+        """Add trials to study.
+
+        For complete documentation, please refer to:
+        https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.add_trials
+
+        Args:
+            trial: Trials to add.
+        """
+        self._study.add_trials(trials)
 
 
 def _wrap_objective(func: ObjectiveFuncType) -> DistributableFuncType:
