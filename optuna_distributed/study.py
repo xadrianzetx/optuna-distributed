@@ -42,14 +42,35 @@ DistributableFuncType = Callable[[DistributedTrial], None]
 
 
 class DistributedStudy:
-    """An extenstion of Optuna study, able to distribute trials across
-    multiple processes or machines.
+    """Extends regular Optuna study by distributing trials across multiple workers.
+
+    This object behaves like regular Optuna study, except trials will be evaluated in parallel
+    after :func:`optuna_distributed.DistributedStudy.optimize` is called. When :obj:`client`
+    is :obj:`None`, work is distributed among available CPU cores by using multiprocessing.
+    If Dask client is specified, `optuna_distributed` can use it to distribute trials across
+    many physical workers in the cluster.
+
+    .. note::
+        Using `optuna_distributed` in distributed mode requires a Dask cluster with matching
+        environment. To read more about the deployment and usage of Dask clusters, please refer
+        to https://docs.dask.org/en/stable/deploying.html.
+
+    .. note::
+        Any APIs besides :func:`optuna_distributed.DistributedStudy.optimize` are just
+        passthrough to regular Optuna study and can be used in standard ways.
+
+    .. note::
+        There are no known compatibility issues at the moment. All Optuna storages, samplers
+        and pruners can be used.
 
     Args:
         study:
-            An Optuna study.
+            An isntance of Optuna study.
         client:
-            A dask client.
+            A Dask client. When specified, all trials will be passed to
+            Dask scheduler to distribute across available workers.
+            If :obj:`None`, multiprocessing backend is used for
+            process based parallelism.
     """
 
     def __init__(self, study: Study, client: Optional[Client] = None) -> None:
@@ -132,7 +153,7 @@ class DistributedStudy:
         """Optimize an objective function.
 
         Optimization is done by choosing a suitable set of hyperparameter values from a given
-        range. If dask client has been specified, evaluations of objective function (trials)
+        range. If Dask client has been specified, evaluations of objective function (trials)
         will be distributed among available workers, otherwise parallelism is process based.
 
         For additional notes on some args, please refer to:
