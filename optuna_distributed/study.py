@@ -375,5 +375,32 @@ def _wrap_objective(func: ObjectiveFuncType) -> DistributableFuncType:
     return _objective_wrapper
 
 
-def from_optuna_study(study: Study) -> DistributedStudy:
-    pass
+def from_optuna_study(study: Study, client: Optional[Client] = None) -> DistributedStudy:
+    """Takes regular Optuna study and extends it to :class:`~optuna_distributed.DistributedStudy`.
+
+    This creates an object which behaves like regular Optuna study, except trials
+    will be evaluated in parallel after :func:`optuna_distributed.DistributedStudy.optimize`
+    is called. When :obj:`client` is :obj:`None`, work is distributed among available CPU cores
+    by using multiprocessing. If Dask client is specified, `optuna_distributed` can use it to
+    distribute trials across many physical workers in the cluster.
+
+    .. note::
+        Using `optuna_distributed` in distributed mode requires a Dask cluster with matching
+        environment. To read more about the deployment and usage of Dask clusters, please refer
+        to https://docs.dask.org/en/stable/deploying.html.
+
+    .. note::
+        Any APIs besides :func:`optuna_distributed.DistributedStudy.optimize` are just
+        passthrough to regular Optuna study and can be used in standard ways.
+
+    .. note::
+        There are no known compatibility issues at the moment. All Optuna storages, samplers
+        and pruners can be used.
+
+    Args:
+        study:
+            A regular Optuna study isntance.
+        client:
+            Dask client, as described in https://distributed.dask.org/en/stable/client.html#client
+    """
+    return DistributedStudy(study, client)
