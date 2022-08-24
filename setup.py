@@ -24,7 +24,7 @@ setup(
     version=get_version(),
     author="Adrian Zuber",
     author_email="xadrianzetx@gmail.com",
-    description="Distributed hyperparameter optimization made easy! ",
+    description="Distributed hyperparameter optimization made easy",
     long_description_content_type="text/markdown",
     long_description=get_long_description(),
     url="https://github.com/xadrianzetx/optuna-distributed",
