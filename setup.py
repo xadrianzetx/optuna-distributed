@@ -56,5 +56,8 @@ setup(
     python_requires=">=3.7",
     # TODO(xadrianzetx) Unpin Optuna after V3 release.
     install_requires=["optuna==3.0.0rc0", "dask[distributed]"],
-    extras_require={"dev": ["black", "isort", "flake8", "mypy", "pandas"], "test": ["pytest"]},
+    extras_require={
+        "dev": ["black", "isort", "flake8", "mypy", "pandas", "pandas-stubs"],
+        "test": ["pytest"],
+    },
 )
