@@ -10,7 +10,7 @@ on:
 
 jobs:
   format:
-    name: Code formatting
+    name: code-formatting
     runs-on: ubuntu-latest
 
     steps:
