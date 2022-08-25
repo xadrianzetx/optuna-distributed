@@ -24,7 +24,7 @@ class TrialPropertyMessage(Message):
     Args:
         trial_id:
             Id of a trial to which the message is referring.
-        trial_property:
+        property:
             An option from :class:`~optuna_distributed.messages.TrialProperty` enum.
     """
 
