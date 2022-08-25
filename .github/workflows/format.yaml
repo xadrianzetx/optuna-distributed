@@ -1,0 +1,38 @@
+name: 'Code formatting'
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  format:
+    name: Code formatting
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Install Python dependencies
+      run: |
+        pip install -U . .[dev]
+
+    - name: Black
+      run: black . --check --diff
+    
+    - name: Flake8
+      run: flake8 .
+
+    - name: Isort
+      run: isort . --check --diff
+
+    # - name: Mypy
+    #   run: mypy .
