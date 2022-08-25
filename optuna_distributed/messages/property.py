@@ -1,5 +1,4 @@
-from enum import Enum
-from enum import auto
+from typing import Literal
 from typing import TYPE_CHECKING
 
 from optuna.trial import Trial
@@ -14,13 +13,9 @@ if TYPE_CHECKING:
     from optuna_distributed.managers import OptimizationManager
 
 
-class TrialProperty(Enum):
-    PARAMS = auto()
-    DISTRIBUTIONS = auto()
-    USER_ATTRS = auto()
-    SYSTEM_ATTRS = auto()
-    DATETIME_START = auto()
-    NUMBER = auto()
+TrialProperty = Literal[
+    "params", "distributions", "user_attrs", "system_attrs", "datetime_start", "number"
+]
 
 
 class TrialPropertyMessage(Message):
@@ -35,20 +30,11 @@ class TrialPropertyMessage(Message):
 
     closing = False
 
-    def __init__(self, trial_id: int, trial_property: TrialProperty) -> None:
+    def __init__(self, trial_id: int, property: TrialProperty) -> None:
         self._trial_id = trial_id
-        self._trial_property = trial_property
+        self._property = property
 
     def process(self, study: "Study", manager: "OptimizationManager") -> None:
         trial = Trial(study, self._trial_id)
-        data = {
-            TrialProperty.PARAMS: trial.params,
-            TrialProperty.DISTRIBUTIONS: trial.distributions,
-            TrialProperty.USER_ATTRS: trial.user_attrs,
-            TrialProperty.SYSTEM_ATTRS: trial.system_attrs,
-            TrialProperty.DATETIME_START: trial.datetime_start,
-            TrialProperty.NUMBER: trial.number,
-        }[self._trial_property]
-
         conn = manager.get_connection(self._trial_id)
-        conn.put(ResponseMessage(self._trial_id, data))
+        conn.put(ResponseMessage(self._trial_id, getattr(trial, self._property)))

@@ -107,21 +107,21 @@ def test_response() -> None:
 
 
 @pytest.mark.parametrize(
-    "name,property",
+    "property",
     [
-        ("params", TrialProperty.PARAMS),
-        ("distributions", TrialProperty.DISTRIBUTIONS),
-        ("user_attrs", TrialProperty.USER_ATTRS),
-        ("system_attrs", TrialProperty.SYSTEM_ATTRS),
-        ("datetime_start", TrialProperty.DATETIME_START),
-        ("number", TrialProperty.NUMBER),
+        "params",
+        "distributions",
+        "user_attrs",
+        "system_attrs",
+        "datetime_start",
+        "number",
     ],
 )
-def test_trial_property(study: Study, manager: Any, name: str, property: TrialProperty) -> None:
+def test_trial_property(study: Study, manager: Any, property: TrialProperty) -> None:
     msg = TrialPropertyMessage(0, property)
     assert not msg.closing
     msg.process(study, manager)
-    expected = getattr(study.get_trials(deepcopy=False)[0], name)
+    expected = getattr(study.get_trials(deepcopy=False)[0], property)
     assert _message_responds_with(expected, manager=manager)
 
 

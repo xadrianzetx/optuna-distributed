@@ -242,29 +242,29 @@ class DistributedTrial:
     @property
     def params(self) -> Dict[str, Any]:
         """Return parameters to be optimized."""
-        return self._get_property(TrialProperty.PARAMS)
+        return self._get_property("params")
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
         """Return distributions of parameters to be optimized."""
-        return self._get_property(TrialProperty.DISTRIBUTIONS)
+        return self._get_property("distributions")
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
         """Return user attributes."""
-        return self._get_property(TrialProperty.USER_ATTRS)
+        return self._get_property("user_attrs")
 
     @property
     def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes."""
-        return self._get_property(TrialProperty.SYSTEM_ATTRS)
+        return self._get_property("system_attrs")
 
     @property
     def datetime_start(self) -> Optional[datetime.datetime]:
         """Return start datetime."""
-        return self._get_property(TrialProperty.DATETIME_START)
+        return self._get_property("datetime_start")
 
     @property
     def number(self) -> int:
         """Return trial's number which is consecutive and unique in a study."""
-        return self._get_property(TrialProperty.NUMBER)
+        return self._get_property("number")
