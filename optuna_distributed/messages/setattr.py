@@ -1,6 +1,7 @@
 from typing import Any
-from typing import Literal
 from typing import TYPE_CHECKING
+
+from typing_extensions import Literal
 
 from optuna_distributed.messages import Message
 
