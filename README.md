@@ -19,6 +19,7 @@ At the moment there is no PyPI release of Optuna-distributed, but it still can b
 ```sh
 pip install git+https://github.com/xadrianzetx/optuna-distributed.git
 ```
+Optuna-distributed requires Python 3.7 or newer.
 
 ## Basic example
 Optuna-distributed wraps standard Optuna study. The resulting object behaves just like regular study, but optimization process is asynchronous. Depending on setup of [Dask client](https://docs.dask.org/en/stable/10-minutes-to-dask.html#scheduling), each trial is scheduled to run on available CPU core on local machine, or physical worker in cluster.
