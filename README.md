@@ -53,7 +53,7 @@ if __name__ == "__main__":
     print(study.best_value)
 ```
 
-But there's more! We can use all of the core Optuna APIs, including [storages, samplers](https://github.com/xadrianzetx/optuna-distributed/blob/main/examples/simple_storages.py) and [pruners](https://github.com/xadrianzetx/optuna-distributed/blob/main/examples/simple_pruning.py)!
+But there's more! All of the core Optuna APIs, including [storages, samplers](https://github.com/xadrianzetx/optuna-distributed/blob/main/examples/simple_storages.py) and [pruners](https://github.com/xadrianzetx/optuna-distributed/blob/main/examples/simple_pruning.py) are supported!
 
 ## What's missing?
 * Arguments passed to `study.optimize` - `timeout` and `catch` are currently noops.
