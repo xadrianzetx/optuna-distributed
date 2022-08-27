@@ -46,7 +46,9 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    study = optuna_distributed.from_optuna_study(optuna.create_study(), client=Client())
+    # client = Client("<your.cluster.scheduler.address>")  # For distributed optimization.
+    client = Client()  # For local asynchronous optimization.
+    study = optuna_distributed.from_optuna_study(optuna.create_study(), client=client)
     study.optimize(objective, n_trials=10)
     print(study.best_value)
 ```
