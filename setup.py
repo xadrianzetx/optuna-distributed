@@ -54,10 +54,9 @@ setup(
         "Topic :: System :: Distributed Computing",
     ],
     python_requires=">=3.7",
-    # TODO(xadrianzetx) Unpin Optuna after V3 release.
     # TODO(xadrianzetx) Remove typing-extensions when Python 3.7 is out of support.
     # We are using typing-extensions because of typing.Literal.
-    install_requires=["optuna==3.0.0rc0", "dask[distributed]", "typing-extensions"],
+    install_requires=["optuna", "dask[distributed]", "typing-extensions"],
     extras_require={
         "dev": ["black", "isort", "flake8", "mypy", "pandas", "pandas-stubs"],
         "test": ["pytest"],
