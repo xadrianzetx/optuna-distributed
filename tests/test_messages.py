@@ -1,4 +1,6 @@
 from typing import Any
+from typing import Callable
+from typing import Generator
 from unittest.mock import MagicMock
 
 from optuna.distributions import BaseDistribution
@@ -10,6 +12,9 @@ from optuna.study import Study
 from optuna.trial import TrialState
 import pytest
 
+from optuna_distributed.eventloop import EventLoop
+from optuna_distributed.ipc import IPCPrimitive
+from optuna_distributed.managers import OptimizationManager
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import FailedMessage
 from optuna_distributed.messages import HeartbeatMessage
@@ -23,40 +28,66 @@ from optuna_distributed.messages import ShouldPruneMessage
 from optuna_distributed.messages import SuggestMessage
 from optuna_distributed.messages import TrialProperty
 from optuna_distributed.messages import TrialPropertyMessage
+from optuna_distributed.trial import DistributedTrial
 
 
-class MockConnection:
+class MockConnection(IPCPrimitive):
     def __init__(self, manager: "MockOptimizationManager") -> None:
         self._manager = manager
+
+    def get(self) -> "Message":
+        ...
 
     def put(self, message: Message) -> None:
         assert isinstance(message, ResponseMessage)
         self._manager.message_response = message.data
 
+    def close(self) -> None:
+        ...
 
-class MockOptimizationManager:
+
+class MockOptimizationManager(OptimizationManager):
     def __init__(self) -> None:
         self.trial_exit_called = False
         self.message_response = None
 
+    def create_futures(
+        self, study: "Study", objective: Callable[["DistributedTrial"], None]
+    ) -> None:
+        ...
+
+    def before_message(self, event_loop: "EventLoop") -> None:
+        ...
+
+    def get_message(self) -> Generator["Message", None, None]:
+        ...
+
+    def after_message(self, event_loop: "EventLoop") -> None:
+        ...
+
+    def get_connection(self, trial_id: int) -> "IPCPrimitive":
+        return MockConnection(self)
+
+    def stop_optimization(self) -> None:
+        ...
+
+    def should_end_optimization(self) -> bool:
+        ...
+
     def register_trial_exit(self, trial_id: int) -> None:
         self.trial_exit_called = True
 
-    def get_connection(self, trial_id: int) -> MockConnection:
-        return MockConnection(self)
-
 
 @pytest.fixture
-def manager() -> Any:
-    # FIXME: Type annotations are too relaxed here.
+def manager() -> MockOptimizationManager:
     return MockOptimizationManager()
 
 
-def _message_responds_with(value: Any, manager: Any) -> bool:
+def _message_responds_with(value: Any, manager: MockOptimizationManager) -> bool:
     return manager.message_response == value
 
 
-def test_completed_with_correct_value(study: Study, manager: Any) -> None:
+def test_completed_with_correct_value(study: Study, manager: MockOptimizationManager) -> None:
     msg = CompletedMessage(0, 0.0)
     assert msg.closing
     msg.process(study, manager)
@@ -66,7 +97,7 @@ def test_completed_with_correct_value(study: Study, manager: Any) -> None:
     assert trial[0].value == 0.0
 
 
-def test_completed_with_incorrect_values(study: Study, manager: Any) -> None:
+def test_completed_with_incorrect_values(study: Study, manager: MockOptimizationManager) -> None:
     msg = CompletedMessage(0, "foo")  # type: ignore
     assert msg.closing
     with pytest.warns():
@@ -74,7 +105,7 @@ def test_completed_with_incorrect_values(study: Study, manager: Any) -> None:
     assert manager.trial_exit_called
 
 
-def test_pruned(study: Study, manager: Any) -> None:
+def test_pruned(study: Study, manager: MockOptimizationManager) -> None:
     msg = PrunedMessage(0, TrialPruned())
     assert msg.closing
     msg.process(study, manager)
@@ -83,7 +114,7 @@ def test_pruned(study: Study, manager: Any) -> None:
     assert len(trial) == 1
 
 
-def test_failed(study: Study, manager: Any) -> None:
+def test_failed(study: Study, manager: MockOptimizationManager) -> None:
     exc = ValueError("foo")
     msg = FailedMessage(0, exc, exc_info=MagicMock())
     assert msg.closing
@@ -117,7 +148,9 @@ def test_response() -> None:
         "number",
     ],
 )
-def test_trial_property(study: Study, manager: Any, property: TrialProperty) -> None:
+def test_trial_property(
+    study: Study, manager: MockOptimizationManager, property: TrialProperty
+) -> None:
     msg = TrialPropertyMessage(0, property)
     assert not msg.closing
     msg.process(study, manager)
@@ -125,7 +158,7 @@ def test_trial_property(study: Study, manager: Any, property: TrialProperty) -> 
     assert _message_responds_with(expected, manager=manager)
 
 
-def test_should_prune(study: Study, manager: Any) -> None:
+def test_should_prune(study: Study, manager: MockOptimizationManager) -> None:
     msg = ShouldPruneMessage(0)
     assert not msg.closing
     msg.process(study, manager)
@@ -136,7 +169,7 @@ def test_should_prune(study: Study, manager: Any) -> None:
     assert trial[0]._trial_id == 0
 
 
-def test_repeated_trial(study: Study, manager: Any) -> None:
+def test_repeated_trial(study: Study, manager: MockOptimizationManager) -> None:
     msg = RepeatedTrialMessage(0)
     assert not msg.closing
 
@@ -145,7 +178,7 @@ def test_repeated_trial(study: Study, manager: Any) -> None:
     assert _message_responds_with(True, manager=manager)
 
 
-def test_report_intermediate(study: Study, manager: Any) -> None:
+def test_report_intermediate(study: Study, manager: MockOptimizationManager) -> None:
     msg = ReportMessage(0, value=0.0, step=1)
     assert not msg.closing
 
@@ -154,7 +187,7 @@ def test_report_intermediate(study: Study, manager: Any) -> None:
     assert trial.intermediate_values[1] == 0.0
 
 
-def test_set_user_attributes(study: Study, manager: Any) -> None:
+def test_set_user_attributes(study: Study, manager: MockOptimizationManager) -> None:
     msg = SetAttributeMessage(0, key="foo", value=0, kind="user")
     assert not msg.closing
 
@@ -163,7 +196,7 @@ def test_set_user_attributes(study: Study, manager: Any) -> None:
     assert trial.user_attrs["foo"] == 0
 
 
-def test_set_system_attributes(study: Study, manager: Any) -> None:
+def test_set_system_attributes(study: Study, manager: MockOptimizationManager) -> None:
     msg = SetAttributeMessage(0, value=0, key="foo", kind="system")
     assert not msg.closing
 
@@ -180,7 +213,9 @@ def test_set_system_attributes(study: Study, manager: Any) -> None:
         CategoricalDistribution(choices=["foo", "bar"]),
     ],
 )
-def test_suggest(study: Study, manager: Any, distribution: BaseDistribution) -> None:
+def test_suggest(
+    study: Study, manager: MockOptimizationManager, distribution: BaseDistribution
+) -> None:
     msg = SuggestMessage(0, name="x", distribution=distribution)
     assert not msg.closing
 
