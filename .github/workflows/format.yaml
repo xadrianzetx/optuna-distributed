@@ -23,7 +23,7 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        pip install -U . .[dev]
+        pip install -U . .[dev] .[test]
 
     - name: Black
       run: black . --check --diff
@@ -34,5 +34,5 @@ jobs:
     - name: Isort
       run: isort . --check --diff
 
-    # - name: Mypy
-    #   run: mypy .
+    - name: Mypy
+      run: mypy .
