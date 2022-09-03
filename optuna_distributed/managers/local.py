@@ -64,6 +64,7 @@ class LocalOptimizationManager(OptimizationManager):
         while True:
             messages: List["Message"] = []
             for incoming in wait(self._pool.values(), timeout=10):
+                assert isinstance(incoming, Connection)
                 try:
                     message = incoming.recv()
                     messages.append(message)

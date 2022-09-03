@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
+from typing import Union
 
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -41,6 +43,7 @@ class SuggestMessage(Message):
 
     def process(self, study: "Study", manager: "OptimizationManager") -> None:
         trial = Trial(study, self._trial_id)
+        value: Union[float, int, CategoricalChoiceType]
         if isinstance(self._distribution, FloatDistribution):
             value = trial.suggest_float(
                 name=self._name,
