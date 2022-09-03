@@ -23,7 +23,7 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        pip install -U . .[dev]
+        pip install -U . .[dev] .[test]
 
     - name: Black
       run: black . --check --diff
