@@ -1,3 +1,4 @@
+from typing import Generic
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class ResponseMessage(Message):
+class ResponseMessage(Message, Generic[T]):
     """A generic message.
 
     Response messages are used by client to pass data back to workers.
