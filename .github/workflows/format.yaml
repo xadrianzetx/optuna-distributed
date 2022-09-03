@@ -34,5 +34,5 @@ jobs:
     - name: Isort
       run: isort . --check --diff
 
-    # - name: Mypy
-    #   run: mypy .
+    - name: Mypy
+      run: mypy .
