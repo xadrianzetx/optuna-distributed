@@ -35,3 +35,4 @@ no_implicit_optional = true
 warn_redundant_casts = true
 strict_equality = true
 strict_concatenate = true
+exclude = ["env", "build", "examples", "setup.py"]
