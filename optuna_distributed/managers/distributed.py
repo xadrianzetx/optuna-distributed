@@ -1,3 +1,4 @@
+import asyncio
 from typing import Callable
 from typing import Dict
 from typing import Generator
@@ -32,9 +33,13 @@ class DistributedOptimizationManager(OptimizationManager):
             An instance of dask client.
         n_trials:
             Number of trials to run.
+        heartbeat_interval:
+            Delay (in seconds) before
+            :func:`optuna_distributed.managers.DistributedOptimizationManager.get_message`
+            produces a heartbeat message if no other message is sent by the worker.
     """
 
-    def __init__(self, client: Client, n_trials: int) -> None:
+    def __init__(self, client: Client, n_trials: int, heartbeat_interval: int = 60) -> None:
         self._client = client
         self._n_trials = n_trials
         self._completed_trials = 0
@@ -43,7 +48,11 @@ class DistributedOptimizationManager(OptimizationManager):
         # Manager has write access to its own message queue as a sort of health check.
         # Basically that means we can pump event loop from callbacks running in
         # main process with e.g. HeartbeatMessage.
-        self._message_queue = Queue(self._public_channel, self._public_channel)
+        self._message_queue = Queue(
+            publishing=self._public_channel,
+            recieving=self._public_channel,
+            timeout=heartbeat_interval,
+        )
         self._private_channels: Dict[int, str] = {}
         self._futures: List[Future] = []
 
@@ -75,10 +84,16 @@ class DistributedOptimizationManager(OptimizationManager):
 
     def get_message(self) -> Generator["Message", None, None]:
         while True:
-            # TODO(xadrianzetx) At some point we might need a mechanism
-            # that allows workers to repeat messages to master.
-            # A deduplication algorithm would go here then.
-            yield self._message_queue.get()
+            try:
+                # TODO(xadrianzetx) At some point we might need a mechanism
+                # that allows workers to repeat messages to master.
+                # A deduplication algorithm would go here then.
+                yield self._message_queue.get()
+            except asyncio.TimeoutError:
+                # Pumping event loop with heartbeat messages on timeout
+                # allows us to handle potential problems gracefully
+                # e.g. in `after_message`.
+                yield HeartbeatMessage()
 
     def after_message(self, event_loop: "EventLoop") -> None:
         ...

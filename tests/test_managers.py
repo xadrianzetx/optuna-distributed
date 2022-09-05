@@ -26,9 +26,18 @@ def test_distributed_get_message(client: Client) -> None:
             break
 
 
-def test_distributed_get_message_timeout(client: Client) -> None:
-    # TODO(xadrianzetx) Manager has to be able to pump event loop with heartbeat messages first.
-    pass
+def test_distributed_heartbeat_on_timeout(client: Client) -> None:
+    def _objective(trial: DistributedTrial) -> None:
+        ...
+
+    study = optuna.create_study()
+    manager = DistributedOptimizationManager(client, n_trials=1, heartbeat_interval=1)
+    manager.create_futures(study, _objective)
+    start = time.time()
+    for message in manager.get_message():
+        assert isinstance(message, HeartbeatMessage)
+        assert 0.8 < time.time() - start < 1.2
+        break
 
 
 def test_distributed_should_end_optimization(client: Client) -> None:
