@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+import multiprocessing
 import time
 
 from dask.distributed import Client
@@ -8,6 +10,7 @@ from optuna_distributed.managers import LocalOptimizationManager
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import HeartbeatMessage
 from optuna_distributed.messages import ResponseMessage
+from optuna_distributed.study import DistributableFuncType
 from optuna_distributed.trial import DistributedTrial
 
 
@@ -178,4 +181,27 @@ def test_local_connection_management() -> None:
         assert message.data["requested"] == message.data["actual"]
         recieved += 1
         if recieved == n_trials:
+            break
+
+
+def test_local_worker_pool_management() -> None:
+    def _objective(trial: DistributedTrial) -> None:
+        trial.connection.put(CompletedMessage(trial.trial_id, value_or_values=0.0))
+
+    @dataclass
+    class _MockEventLoop:
+        study: optuna.Study
+        objective: DistributableFuncType
+
+    study = optuna.create_study()
+    manager = LocalOptimizationManager(n_trials=10, n_jobs=-1)
+    eventloop = _MockEventLoop(study, _objective)
+
+    manager.create_futures(study, _objective)
+    for message in manager.get_message():
+        message.process(study, manager)
+        manager.after_message(eventloop)  # type: ignore
+        if not manager.should_end_optimization():
+            assert 0 < len(manager._pool) <= multiprocessing.cpu_count()
+        else:
             break

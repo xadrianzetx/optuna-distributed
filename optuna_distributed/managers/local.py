@@ -85,6 +85,7 @@ class LocalOptimizationManager(OptimizationManager):
         if self._workers_to_spawn > 0:
             self.create_futures(event_loop.study, event_loop.objective)
             self._trials_remaining -= self._workers_to_spawn
+            self._workers_to_spawn = 0
 
     def get_connection(self, trial_id: int) -> "IPCPrimitive":
         return Pipe(self._pool[trial_id])
