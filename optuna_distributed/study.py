@@ -375,7 +375,7 @@ def _wrap_objective(func: ObjectiveFuncType) -> DistributableFuncType:
     return _objective_wrapper
 
 
-def from_optuna_study(study: Study, client: Optional[Client] = None) -> DistributedStudy:
+def from_study(study: Study, client: Optional[Client] = None) -> DistributedStudy:
     """Takes regular Optuna study and extends it to :class:`~optuna_distributed.DistributedStudy`.
 
     This creates an object which behaves like regular Optuna study, except trials
