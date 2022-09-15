@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     # Optuna-distributed just wraps standard Optuna study. The resulting object behaves
     # just like regular study, but optimization process is asynchronous.
-    study = optuna_distributed.from_optuna_study(optuna.create_study(), client=client)
+    study = optuna_distributed.from_study(optuna.create_study(), client=client)
 
     # And let's continue with original Optuna example from here.
     # Let us minimize the objective function above.
