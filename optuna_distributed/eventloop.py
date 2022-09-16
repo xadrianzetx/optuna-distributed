@@ -48,8 +48,8 @@ class EventLoop:
 
     def run(
         self,
-        n_trials: Optional[int],
-        timeout: Optional[float],
+        n_trials: Optional[int] = None,
+        timeout: Optional[float] = None,
         catch: Tuple[Type[Exception], ...] = (),
         callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         show_progress_bar: bool = False,

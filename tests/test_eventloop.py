@@ -19,7 +19,7 @@ def test_raises_on_trial_exception() -> None:
     manager = LocalOptimizationManager(n_trials, n_jobs=1)
     event_loop = EventLoop(study, manager, objective=_objective)
     with pytest.raises(ValueError):
-        event_loop.run(n_trials, timeout=None)
+        event_loop.run(n_trials)
 
 
 def test_catches_on_trial_exception() -> None:
@@ -31,4 +31,4 @@ def test_catches_on_trial_exception() -> None:
     study = optuna.create_study()
     manager = LocalOptimizationManager(n_trials, n_jobs=1)
     event_loop = EventLoop(study, manager, objective=_objective)
-    event_loop.run(n_trials, timeout=None, catch=(ValueError,))
+    event_loop.run(n_trials, catch=(ValueError,))
