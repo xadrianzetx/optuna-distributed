@@ -50,6 +50,4 @@ class FailedMessage(Message):
             f"of the following error: {repr(self._exception)}",
             exc_info=self._exc_info,
         )
-        # TODO(xadrianzetx) Implement exception catching.
-        # https://github.com/optuna/optuna/blob/5d19e5e1f5dd9b3f9a11c74d215bd2a9c7ff43d2/optuna/study/_optimize.py#L229-L234
         raise self._exception
