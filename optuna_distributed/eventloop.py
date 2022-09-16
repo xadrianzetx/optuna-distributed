@@ -81,14 +81,11 @@ class EventLoop:
                 message.process(self.study, self.manager)
                 self.manager.after_message(self)
 
-            except Exception:
-                self.manager.stop_optimization()
-                # TODO(xadrianzetx) Is there a better way to do this in Optuna?
-                states = (TrialState.RUNNING, TrialState.WAITING)
-                trials = self.study.get_trials(deepcopy=False, states=states)
-                for trial in trials:
-                    self.study._storage.set_trial_state_values(trial._trial_id, TrialState.FAIL)
-                raise
+            except Exception as e:
+                if not isinstance(e, catch):
+                    self.manager.stop_optimization()
+                    self._fail_unfinished_trials()
+                    raise
 
             if message.closing:
                 progress_bar.update((datetime.now() - time_start).total_seconds())
@@ -97,3 +94,10 @@ class EventLoop:
             # TODO(xadrianzetx): Call callbacks here.
             if self.manager.should_end_optimization():
                 break
+
+    def _fail_unfinished_trials(self) -> None:
+        # TODO(xadrianzetx) Is there a better way to do this in Optuna?
+        states = (TrialState.RUNNING, TrialState.WAITING)
+        trials = self.study.get_trials(deepcopy=False, states=states)
+        for trial in trials:
+            self.study._storage.set_trial_state_values(trial._trial_id, TrialState.FAIL)
