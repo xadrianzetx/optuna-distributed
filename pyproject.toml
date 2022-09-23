@@ -1,3 +1,60 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "optuna_distributed"
+description = "Distributed hyperparameter optimization made easy"
+authors = [
+  {name="Adrian Zuber", email="xadrianzetx@gmail.com"},
+]
+requires-python = ">=3.7"
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Distributed Computing",
+]
+
+# TODO(xadrianzetx) Remove typing-extensions when Python 3.7 is out of support.
+# We are using typing-extensions because of typing.Literal.
+dependencies = [
+    "optuna",
+    "dask[distributed]",
+    "typing-extensions",
+]
+dynamic = ["version", "readme"]
+
+# FIXME: Avoid specifying dev and test requirements like that.
+[project.optional-dependencies]
+dev = ["black", "isort", "flake8", "mypy", "pandas", "pandas-stubs"]
+test = ["pytest"]
+
+[project.urls]
+"Source" = "https://github.com/xadrianzetx/optuna-distributed"
+"Bug Tracker" = "https://github.com/xadrianzetx/optuna-distributed/issues"
+
+[tool.setuptools]
+packages = ["optuna_distributed"]
+
+[tool.setuptools.dynamic]
+version = {attr = "optuna_distributed.__version__"}
+readme = {file = "README.md"}
+
 [tool.black]
 line-length = 99
 target-version = ["py38"]
