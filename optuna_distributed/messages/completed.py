@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from optuna_distributed.managers import OptimizationManager
 
 
-_logger = logging.get_logger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class CompletedMessage(Message):
