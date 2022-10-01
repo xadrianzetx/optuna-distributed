@@ -1,6 +1,6 @@
+import logging
 from typing import TYPE_CHECKING
 
-from optuna import logging
 from optuna.exceptions import TrialPruned
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from optuna_distributed.managers import OptimizationManager
 
 
-_logger = logging.get_logger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class PrunedMessage(Message):

@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 from typing import Callable
 from typing import Generator
@@ -87,11 +88,15 @@ def _message_responds_with(value: Any, manager: MockOptimizationManager) -> bool
     return manager.message_response == value
 
 
-def test_completed_with_correct_value(study: Study, manager: MockOptimizationManager) -> None:
+def test_completed_with_correct_value(
+    study: Study, manager: MockOptimizationManager, caplog: pytest.LogCaptureFixture
+) -> None:
     msg = CompletedMessage(0, 0.0)
     assert msg.closing
     msg.process(study, manager)
     assert manager.trial_exit_called
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelno == logging.INFO
     trial = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
     assert len(trial) == 1
     assert trial[0].value == 0.0
@@ -105,16 +110,22 @@ def test_completed_with_incorrect_values(study: Study, manager: MockOptimization
     assert manager.trial_exit_called
 
 
-def test_pruned(study: Study, manager: MockOptimizationManager) -> None:
+def test_pruned(
+    study: Study, manager: MockOptimizationManager, caplog: pytest.LogCaptureFixture
+) -> None:
     msg = PrunedMessage(0, TrialPruned())
     assert msg.closing
     msg.process(study, manager)
     assert manager.trial_exit_called
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelno == logging.INFO
     trial = study.get_trials(deepcopy=False, states=(TrialState.PRUNED,))
     assert len(trial) == 1
 
 
-def test_failed(study: Study, manager: MockOptimizationManager) -> None:
+def test_failed(
+    study: Study, manager: MockOptimizationManager, caplog: pytest.LogCaptureFixture
+) -> None:
     exc = ValueError("foo")
     msg = FailedMessage(0, exc, exc_info=MagicMock())
     assert msg.closing
@@ -122,6 +133,8 @@ def test_failed(study: Study, manager: MockOptimizationManager) -> None:
         msg.process(study, manager)
 
     assert manager.trial_exit_called
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelno == logging.WARNING
     trial = study.get_trials(deepcopy=False, states=(TrialState.FAIL,))
     assert len(trial) == 1
 
