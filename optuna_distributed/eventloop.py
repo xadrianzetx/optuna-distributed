@@ -93,6 +93,7 @@ class EventLoop:
             # TODO(xadrianzetx): Stop optimization on timeout here.
             # TODO(xadrianzetx): Call callbacks here.
             if self.manager.should_end_optimization():
+                progress_bar.close()
                 break
 
     def _fail_unfinished_trials(self) -> None:
