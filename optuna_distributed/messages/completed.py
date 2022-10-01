@@ -1,8 +1,10 @@
+import io
+import logging
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
-from optuna import logging
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
@@ -50,10 +52,28 @@ class CompletedMessage(Message):
         finally:
             manager.register_trial_exit(self._trial_id)
             if frozen_trial.state == TrialState.COMPLETE:
-                study._log_completed_trial(frozen_trial)
+                self._log_completed_trial(study, trial=frozen_trial)
             else:
                 # Tell failed to postprocess trial, so state has changed.
                 _logger.warning(
                     f"Trial {frozen_trial.number} failed because "
                     "of the following error: STUDY_TELL_WARNING"
                 )
+
+    def _log_completed_trial(self, study: "Study", trial: FrozenTrial) -> None:
+        buffer = io.StringIO()
+        is_multiobjective = len(trial.values) != 1
+        form = "values" if is_multiobjective else "value"
+
+        buffer.write(
+            f"Trial {trial.number} finished with {form}: "
+            f"{self._value_or_values} and parameters: {trial.params}."
+        )
+        if not is_multiobjective:
+            buffer.write(
+                f" Best is trial {study.best_trial.number} "
+                f"with value: {study.best_trial.value}."
+            )
+
+        _logger.info(buffer.getvalue())
+        buffer.close()
