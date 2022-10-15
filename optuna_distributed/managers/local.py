@@ -3,15 +3,23 @@ from multiprocessing import Pipe as MultiprocessingPipe
 from multiprocessing import Process
 from multiprocessing.connection import Connection
 from multiprocessing.connection import wait
+import sys
 from typing import Callable
 from typing import Dict
 from typing import Generator
 from typing import List
 from typing import TYPE_CHECKING
 
+from optuna.exceptions import TrialPruned
+
 from optuna_distributed.ipc import Pipe
+from optuna_distributed.managers import DistributableFuncType
+from optuna_distributed.managers import ObjectiveFuncType
 from optuna_distributed.managers import OptimizationManager
+from optuna_distributed.messages import CompletedMessage
+from optuna_distributed.messages import FailedMessage
 from optuna_distributed.messages import HeartbeatMessage
+from optuna_distributed.messages import PrunedMessage
 from optuna_distributed.trial import DistributedTrial
 
 
@@ -45,6 +53,9 @@ class LocalOptimizationManager(OptimizationManager):
         self._workers_to_spawn = min(self._n_jobs, n_trials)
         self._trials_remaining = n_trials - self._workers_to_spawn
         self._pool: Dict[int, Connection] = {}
+
+    def provide_distributable(self, func: ObjectiveFuncType) -> DistributableFuncType:
+        return _distributable(func)
 
     def create_futures(
         self, study: "Study", objective: Callable[[DistributedTrial], None]
@@ -101,3 +112,25 @@ class LocalOptimizationManager(OptimizationManager):
     def register_trial_exit(self, trial_id: int) -> None:
         # Noop, as worker informs us about exit by closing connection.
         ...
+
+
+def _distributable(func: ObjectiveFuncType) -> DistributableFuncType:
+    def _wrapper(trial: DistributedTrial) -> None:
+        try:
+            value_or_values = func(trial)
+            message = CompletedMessage(trial.trial_id, value_or_values)
+            trial.connection.put(message)
+
+        except TrialPruned as e:
+            message = PrunedMessage(trial.trial_id, e)
+            trial.connection.put(message)
+
+        except Exception as e:
+            exc_info = sys.exc_info()
+            message = FailedMessage(trial.trial_id, e, exc_info)
+            trial.connection.put(message)
+
+        finally:
+            trial.connection.close()
+
+    return _wrapper

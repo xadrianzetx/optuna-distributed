@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from typing import Callable
 from typing import Dict
 from typing import Generator
@@ -8,10 +9,18 @@ import uuid
 
 from dask.distributed import Client
 from dask.distributed import Future
+from optuna.exceptions import TrialPruned
 
 from optuna_distributed.ipc import Queue
+from optuna_distributed.managers import DistributableFuncType
+from optuna_distributed.managers import ObjectiveFuncType
 from optuna_distributed.managers import OptimizationManager
+from optuna_distributed.messages import CompletedMessage
+from optuna_distributed.messages import FailedMessage
 from optuna_distributed.messages import HeartbeatMessage
+from optuna_distributed.messages import PrunedMessage
+from optuna_distributed.messages import RepeatedTrialMessage
+from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.trial import DistributedTrial
 
 
@@ -68,6 +77,9 @@ class DistributedOptimizationManager(OptimizationManager):
         self._private_channels[trial_id] = private_channel
         return Queue(self._public_channel, private_channel)
 
+    def provide_distributable(self, func: ObjectiveFuncType) -> DistributableFuncType:
+        return _distributable(func)
+
     def create_futures(
         self, study: "Study", objective: Callable[[DistributedTrial], None]
     ) -> None:
@@ -118,3 +130,32 @@ class DistributedOptimizationManager(OptimizationManager):
 
     def register_trial_exit(self, trial_id: int) -> None:
         self._completed_trials += 1
+
+
+def _distributable(func: ObjectiveFuncType) -> DistributableFuncType:
+    def _wrapper(trial: DistributedTrial) -> None:
+        trial.connection.put(RepeatedTrialMessage(trial.trial_id))
+        is_repeated = trial.connection.get()
+        assert isinstance(is_repeated, ResponseMessage)
+        message: Message
+        if is_repeated.data:
+            return
+
+        try:
+            value_or_values = func(trial)
+            message = CompletedMessage(trial.trial_id, value_or_values)
+            trial.connection.put(message)
+
+        except TrialPruned as e:
+            message = PrunedMessage(trial.trial_id, e)
+            trial.connection.put(message)
+
+        except Exception as e:
+            exc_info = sys.exc_info()
+            message = FailedMessage(trial.trial_id, e, exc_info)
+            trial.connection.put(message)
+
+        finally:
+            trial.connection.close()
+
+    return _wrapper
