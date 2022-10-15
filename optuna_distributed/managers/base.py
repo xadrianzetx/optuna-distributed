@@ -30,28 +30,16 @@ class OptimizationManager(ABC):
     """
 
     @abc.abstractmethod
-    def provide_distributable(self, func: ObjectiveFuncType) -> DistributableFuncType:
-        """Provides a wrapper to objective function that can be distributed among workers.
-
-        Args:
-            func:
-                User defined callable that implements objective function. Must be
-                serializable and in distributed mode can only use resources available
-                to all workers in cluster.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def create_futures(
-        self, study: "Study", objective: Callable[["DistributedTrial"], None]
-    ) -> None:
+    def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
         """Spawns a set of workers to run objective function.
 
         Args:
             study:
                 An instance of Optuna study.
             objective:
-                Objective function to run on worker.
+                User defined callable that implements objective function. Must be
+                serializable and in distributed mode can only use resources available
+                to all workers in cluster.
         """
         raise NotImplementedError
 

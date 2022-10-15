@@ -177,8 +177,7 @@ class DistributedStudy:
         )
 
         try:
-            distributable = manager.provide_distributable(func)
-            event_loop = EventLoop(self._study, manager, distributable)
+            event_loop = EventLoop(self._study, manager, objective=func)
             event_loop.run(n_trials, timeout, catch, callbacks, show_progress_bar)
 
         except KeyboardInterrupt:
