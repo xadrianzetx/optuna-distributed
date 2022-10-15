@@ -19,6 +19,7 @@ from optuna_distributed.managers import OptimizationManager
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import FailedMessage
 from optuna_distributed.messages import HeartbeatMessage
+from optuna_distributed.messages import Message
 from optuna_distributed.messages import PrunedMessage
 from optuna_distributed.trial import DistributedTrial
 
@@ -28,7 +29,6 @@ if TYPE_CHECKING:
 
     from optuna_distributed.eventloop import EventLoop
     from optuna_distributed.ipc import IPCPrimitive
-    from optuna_distributed.messages import Message
 
 
 class LocalOptimizationManager(OptimizationManager):
@@ -71,9 +71,9 @@ class LocalOptimizationManager(OptimizationManager):
     def before_message(self, event_loop: "EventLoop") -> None:
         ...
 
-    def get_message(self) -> Generator["Message", None, None]:
+    def get_message(self) -> Generator[Message, None, None]:
         while True:
-            messages: List["Message"] = []
+            messages: List[Message] = []
             for incoming in wait(self._pool.values(), timeout=10):
                 assert isinstance(incoming, Connection)
                 try:
@@ -116,6 +116,7 @@ class LocalOptimizationManager(OptimizationManager):
 
 def _distributable(func: ObjectiveFuncType) -> DistributableFuncType:
     def _wrapper(trial: DistributedTrial) -> None:
+        message: Message
         try:
             value_or_values = func(trial)
             message = CompletedMessage(trial.trial_id, value_or_values)
