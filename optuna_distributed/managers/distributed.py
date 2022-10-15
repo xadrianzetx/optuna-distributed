@@ -127,13 +127,8 @@ class DistributedOptimizationManager(OptimizationManager):
 
 def _distributable(func: ObjectiveFuncType) -> DistributableFuncType:
     def _wrapper(trial: DistributedTrial) -> None:
-        trial.connection.put(RepeatedTrialMessage(trial.trial_id))
-        is_repeated = trial.connection.get()
-        assert isinstance(is_repeated, ResponseMessage)
+        # FIXME: Re-introduce task deduplication.
         message: Message
-        if is_repeated.data:
-            return
-
         try:
             value_or_values = func(trial)
             message = CompletedMessage(trial.trial_id, value_or_values)
