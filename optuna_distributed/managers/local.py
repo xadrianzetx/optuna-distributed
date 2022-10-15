@@ -4,7 +4,6 @@ from multiprocessing import Process
 from multiprocessing.connection import Connection
 from multiprocessing.connection import wait
 import sys
-from typing import Callable
 from typing import Dict
 from typing import Generator
 from typing import List
@@ -54,17 +53,13 @@ class LocalOptimizationManager(OptimizationManager):
         self._trials_remaining = n_trials - self._workers_to_spawn
         self._pool: Dict[int, Connection] = {}
 
-    def provide_distributable(self, func: ObjectiveFuncType) -> DistributableFuncType:
-        return _distributable(func)
-
-    def create_futures(
-        self, study: "Study", objective: Callable[[DistributedTrial], None]
-    ) -> None:
+    def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
+        distributable = _distributable(objective)
         trial_ids = [study.ask()._trial_id for _ in range(self._workers_to_spawn)]
         for trial_id in trial_ids:
             master, worker = MultiprocessingPipe()
             trial = DistributedTrial(trial_id, Pipe(worker))
-            Process(target=objective, args=(trial,), daemon=True).start()
+            Process(target=distributable, args=(trial,), daemon=True).start()
             self._pool[trial_id] = master
             worker.close()
 
