@@ -2,7 +2,11 @@ import abc
 from abc import ABC
 from typing import Callable
 from typing import Generator
+from typing import Sequence
 from typing import TYPE_CHECKING
+from typing import Union
+
+from optuna_distributed.trial import DistributedTrial
 
 
 if TYPE_CHECKING:
@@ -11,7 +15,10 @@ if TYPE_CHECKING:
     from optuna_distributed.eventloop import EventLoop
     from optuna_distributed.ipc import IPCPrimitive
     from optuna_distributed.messages import Message
-    from optuna_distributed.trial import DistributedTrial
+
+
+ObjectiveFuncType = Callable[[DistributedTrial], Union[float, Sequence[float]]]
+DistributableFuncType = Callable[[DistributedTrial], None]
 
 
 class OptimizationManager(ABC):
@@ -21,6 +28,18 @@ class OptimizationManager(ABC):
     and distributed workers. They can provide workers with context necessary
     to do the job, and pump event loop with messages to process.
     """
+
+    @abc.abstractmethod
+    def provide_distributable(self, func: ObjectiveFuncType) -> DistributableFuncType:
+        """Provides a wrapper to objective function that can be distributed among workers.
+
+        Args:
+            func:
+                User defined callable that implements objective function. Must be
+                serializable and in distributed mode can only use resources available
+                to all workers in cluster.
+        """
+        raise NotImplementedError
 
     @abc.abstractmethod
     def create_futures(

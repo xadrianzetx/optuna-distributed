@@ -3,7 +3,6 @@ from typing import Any
 from typing import Callable
 from typing import List
 from typing import Optional
-from typing import TYPE_CHECKING
 from typing import Tuple
 from typing import Type
 
@@ -13,10 +12,8 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
-
-if TYPE_CHECKING:
-    from optuna_distributed.managers import OptimizationManager
-    from optuna_distributed.study import DistributableFuncType
+from optuna_distributed.managers import DistributableFuncType
+from optuna_distributed.managers import OptimizationManager
 
 
 class EventLoop:
@@ -39,8 +36,8 @@ class EventLoop:
     def __init__(
         self,
         study: Study,
-        manager: "OptimizationManager",
-        objective: "DistributableFuncType",
+        manager: OptimizationManager,
+        objective: DistributableFuncType,
     ) -> None:
         self.study = study
         self.manager = manager

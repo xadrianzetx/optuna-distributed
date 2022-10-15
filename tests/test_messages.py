@@ -15,6 +15,8 @@ import pytest
 
 from optuna_distributed.eventloop import EventLoop
 from optuna_distributed.ipc import IPCPrimitive
+from optuna_distributed.managers import DistributableFuncType
+from optuna_distributed.managers import ObjectiveFuncType
 from optuna_distributed.managers import OptimizationManager
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import FailedMessage
@@ -51,6 +53,9 @@ class MockOptimizationManager(OptimizationManager):
     def __init__(self) -> None:
         self.trial_exit_called = False
         self.message_response = None
+
+    def provide_distributable(self, func: ObjectiveFuncType) -> DistributableFuncType:
+        ...
 
     def create_futures(
         self, study: "Study", objective: Callable[["DistributedTrial"], None]
