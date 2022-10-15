@@ -5,12 +5,12 @@ import time
 from dask.distributed import Client
 import optuna
 
+from optuna_distributed.managers import DistributableFuncType
 from optuna_distributed.managers import DistributedOptimizationManager
 from optuna_distributed.managers import LocalOptimizationManager
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import HeartbeatMessage
 from optuna_distributed.messages import ResponseMessage
-from optuna_distributed.study import DistributableFuncType
 from optuna_distributed.trial import DistributedTrial
 
 
