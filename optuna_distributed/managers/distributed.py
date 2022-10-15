@@ -1,6 +1,5 @@
 import asyncio
 import sys
-from typing import Callable
 from typing import Dict
 from typing import Generator
 from typing import List
@@ -19,8 +18,6 @@ from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import FailedMessage
 from optuna_distributed.messages import HeartbeatMessage
 from optuna_distributed.messages import PrunedMessage
-from optuna_distributed.messages import RepeatedTrialMessage
-from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.trial import DistributedTrial
 
 
@@ -77,17 +74,13 @@ class DistributedOptimizationManager(OptimizationManager):
         self._private_channels[trial_id] = private_channel
         return Queue(self._public_channel, private_channel)
 
-    def provide_distributable(self, func: ObjectiveFuncType) -> DistributableFuncType:
-        return _distributable(func)
-
-    def create_futures(
-        self, study: "Study", objective: Callable[[DistributedTrial], None]
-    ) -> None:
+    def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
         # HACK: It's kinda naughty to access _trial_id, but this is gonna make
         # our lifes much easier in messaging system.
+        distributable = _distributable(objective)
         trial_ids = [study.ask()._trial_id for _ in range(self._n_trials)]
         trials = [DistributedTrial(id, self._assign_private_channel(id)) for id in trial_ids]
-        self._futures = self._client.map(objective, trials, pure=False)
+        self._futures = self._client.map(distributable, trials, pure=False)
         for future in self._futures:
             future.add_done_callback(self._ensure_safe_exit)
 
@@ -134,13 +127,8 @@ class DistributedOptimizationManager(OptimizationManager):
 
 def _distributable(func: ObjectiveFuncType) -> DistributableFuncType:
     def _wrapper(trial: DistributedTrial) -> None:
-        trial.connection.put(RepeatedTrialMessage(trial.trial_id))
-        is_repeated = trial.connection.get()
-        assert isinstance(is_repeated, ResponseMessage)
+        # FIXME: Re-introduce task deduplication.
         message: Message
-        if is_repeated.data:
-            return
-
         try:
             value_or_values = func(trial)
             message = CompletedMessage(trial.trial_id, value_or_values)

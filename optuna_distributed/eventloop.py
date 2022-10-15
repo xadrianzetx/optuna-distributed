@@ -12,7 +12,7 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
-from optuna_distributed.managers import DistributableFuncType
+from optuna_distributed.managers import ObjectiveFuncType
 from optuna_distributed.managers import OptimizationManager
 
 
@@ -37,7 +37,7 @@ class EventLoop:
         self,
         study: Study,
         manager: OptimizationManager,
-        objective: DistributableFuncType,
+        objective: ObjectiveFuncType,
     ) -> None:
         self.study = study
         self.manager = manager

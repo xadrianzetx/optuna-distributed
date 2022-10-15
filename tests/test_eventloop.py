@@ -1,18 +1,14 @@
-import sys
-
 import optuna
 import pytest
 
 from optuna_distributed.eventloop import EventLoop
 from optuna_distributed.managers import LocalOptimizationManager
-from optuna_distributed.messages import FailedMessage
 from optuna_distributed.trial import DistributedTrial
 
 
 def test_raises_on_trial_exception() -> None:
-    def _objective(trial: DistributedTrial) -> None:
-        exception = ValueError()
-        trial.connection.put(FailedMessage(trial.trial_id, exception, exc_info=sys.exc_info()))
+    def _objective(trial: DistributedTrial) -> float:
+        raise ValueError()
 
     n_trials = 5
     study = optuna.create_study()
@@ -23,9 +19,8 @@ def test_raises_on_trial_exception() -> None:
 
 
 def test_catches_on_trial_exception() -> None:
-    def _objective(trial: DistributedTrial) -> None:
-        exception = ValueError()
-        trial.connection.put(FailedMessage(trial.trial_id, exception, exc_info=sys.exc_info()))
+    def _objective(trial: DistributedTrial) -> float:
+        raise ValueError()
 
     n_trials = 5
     study = optuna.create_study()

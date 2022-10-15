@@ -1,6 +1,5 @@
 import logging
 from typing import Any
-from typing import Callable
 from typing import Generator
 from unittest.mock import MagicMock
 
@@ -15,7 +14,6 @@ import pytest
 
 from optuna_distributed.eventloop import EventLoop
 from optuna_distributed.ipc import IPCPrimitive
-from optuna_distributed.managers import DistributableFuncType
 from optuna_distributed.managers import ObjectiveFuncType
 from optuna_distributed.managers import OptimizationManager
 from optuna_distributed.messages import CompletedMessage
@@ -31,7 +29,6 @@ from optuna_distributed.messages import ShouldPruneMessage
 from optuna_distributed.messages import SuggestMessage
 from optuna_distributed.messages import TrialProperty
 from optuna_distributed.messages import TrialPropertyMessage
-from optuna_distributed.trial import DistributedTrial
 
 
 class MockConnection(IPCPrimitive):
@@ -54,12 +51,7 @@ class MockOptimizationManager(OptimizationManager):
         self.trial_exit_called = False
         self.message_response = None
 
-    def provide_distributable(self, func: ObjectiveFuncType) -> DistributableFuncType:
-        ...
-
-    def create_futures(
-        self, study: "Study", objective: Callable[["DistributedTrial"], None]
-    ) -> None:
+    def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
         ...
 
     def before_message(self, event_loop: "EventLoop") -> None:
