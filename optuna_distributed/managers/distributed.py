@@ -107,6 +107,8 @@ class DistributedOptimizationManager(OptimizationManager):
         self._n_trials = n_trials
         self._completed_trials = 0
         self._public_channel = str(uuid.uuid4())
+        self._synchronizer = _StateSynchronizer()
+        self._is_distributed = not isinstance(client.cluster, LocalCluster)
 
         # Manager has write access to its own message queue as a sort of health check.
         # Basically that means we can pump event loop from callbacks running in
