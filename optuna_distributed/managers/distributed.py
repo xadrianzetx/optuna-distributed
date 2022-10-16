@@ -183,8 +183,8 @@ class DistributedOptimizationManager(OptimizationManager):
     def stop_optimization(self) -> None:
         # Only want to cleanup cluster that does not belong to us.
         # TODO(xadrianzetx) Notebooks might be a special case (cleanup even with LocalCluster).
+        self._client.cancel(self._futures)
         if self._is_distributed:
-            self._client.cancel(self._futures)
             # Twice the timeout of task connection.
             # This way even tasks waiting for message will have chance to exit.
             self._synchronizer.emit_stop_and_wait(patience=10)
