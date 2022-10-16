@@ -185,25 +185,54 @@ class DistributedOptimizationManager(OptimizationManager):
         self._completed_trials += 1
 
 
-def _distributable(func: ObjectiveFuncType) -> DistributableFuncType:
-    def _wrapper(trial: DistributedTrial) -> None:
+def _distributable(func: ObjectiveFuncType, with_supervisor: bool) -> DistributableWithContext:
+    def _wrapper(context: _TaskContext) -> None:
         # FIXME: Re-introduce task deduplication.
+        task_state = Variable(context.task_state_var)
+        task_state.set(_TaskState.RUNNING)
         message: Message
+
         try:
-            value_or_values = func(trial)
-            message = CompletedMessage(trial.trial_id, value_or_values)
-            trial.connection.put(message)
+            if with_supervisor:
+                args = (threading.get_ident(), context)
+                Thread(target=_task_supervisor, args=args, daemon=True).start()
+
+            value_or_values = func(context.trial)
+            message = CompletedMessage(context.trial.trial_id, value_or_values)
+            context.trial.connection.put(message)
 
         except TrialPruned as e:
-            message = PrunedMessage(trial.trial_id, e)
-            trial.connection.put(message)
+            message = PrunedMessage(context.trial.trial_id, e)
+            context.trial.connection.put(message)
+
+        except WorkerInterrupted:
+            # FIXME remove this dbgln.
+            print(f"Trial {context.trial.trial_id} interrupted.")
 
         except Exception as e:
             exc_info = sys.exc_info()
-            message = FailedMessage(trial.trial_id, e, exc_info)
-            trial.connection.put(message)
+            message = FailedMessage(context.trial.trial_id, e, exc_info)
+            context.trial.connection.put(message)
 
         finally:
-            trial.connection.close()
+            context.trial.connection.close()
+            task_state.set(_TaskState.FINISHED)
 
     return _wrapper
+
+
+def _task_supervisor(thread_id: int, context: _TaskContext) -> None:
+    optimization_enabled = Variable(context.stop_flag)
+    task_state = Variable(context.task_state_var)
+    while True:
+        time.sleep(0.1)
+        if task_state.get() == _TaskState.FINISHED:
+            break
+
+        if not optimization_enabled.get():
+            # https://gist.github.com/liuw/2407154
+            # https://distributed.dask.org/en/stable/worker-state.html#task-cancellation
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                ctypes.c_long(thread_id), ctypes.py_object(WorkerInterrupted)
+            )
+            break
