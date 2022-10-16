@@ -1,5 +1,13 @@
 import asyncio
+import ctypes
+from dataclasses import dataclass
+from enum import IntEnum
+import logging
 import sys
+import threading
+from threading import Thread
+import time
+from typing import Callable
 from typing import Dict
 from typing import Generator
 from typing import List
@@ -8,10 +16,11 @@ import uuid
 
 from dask.distributed import Client
 from dask.distributed import Future
+from dask.distributed import LocalCluster
+from dask.distributed import Variable
 from optuna.exceptions import TrialPruned
 
 from optuna_distributed.ipc import Queue
-from optuna_distributed.managers import DistributableFuncType
 from optuna_distributed.managers import ObjectiveFuncType
 from optuna_distributed.managers import OptimizationManager
 from optuna_distributed.messages import CompletedMessage
@@ -27,6 +36,54 @@ if TYPE_CHECKING:
     from optuna_distributed.eventloop import EventLoop
     from optuna_distributed.ipc import IPCPrimitive
     from optuna_distributed.messages import Message
+
+
+DistributableWithContext = Callable[["_TaskContext"], None]
+_logger = logging.getLogger(__name__)
+
+
+class WorkerInterrupted(Exception):
+    ...
+
+
+class _TaskState(IntEnum):
+    WAITING = 0
+    RUNNING = 1
+    FINISHED = 2
+
+
+@dataclass
+class _TaskContext:
+    trial: DistributedTrial
+    stop_flag: str
+    task_state_var: str
+
+
+class _StateSynchronizer:
+    def __init__(self) -> None:
+        self._optimization_enabled = Variable()
+        self._optimization_enabled.set(True)
+        self._task_states: List[Variable] = []
+
+    @property
+    def stop_flag(self) -> str:
+        return self._optimization_enabled.name
+
+    def set_initial_state(self) -> str:
+        task_state = Variable()
+        task_state.set(_TaskState.WAITING)
+        self._task_states.append(task_state)
+        return task_state.name
+
+    def emit_stop_and_wait(self, patience: int) -> None:
+        self._optimization_enabled.set(False)
+        disabled_at = time.time()
+        _logger.info("Interrupting running tasks...")
+        while any(state.get() == _TaskState.RUNNING for state in self._task_states):
+            if time.time() - disabled_at > patience:
+                raise TimeoutError("Timed out while trying to interrupt running tasks.")
+            time.sleep(0.1)
+        _logger.info("All tasks have been stopped.")
 
 
 class DistributedOptimizationManager(OptimizationManager):
