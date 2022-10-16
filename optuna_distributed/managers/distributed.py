@@ -131,14 +131,28 @@ class DistributedOptimizationManager(OptimizationManager):
     def _assign_private_channel(self, trial_id: int) -> "Queue":
         private_channel = str(uuid.uuid4())
         self._private_channels[trial_id] = private_channel
-        return Queue(self._public_channel, private_channel)
+        return Queue(self._public_channel, private_channel, timeout=5)
+
+    def _create_trials_with_context(self, trial_ids: List[int]) -> List[_TaskContext]:
+        context: List[_TaskContext] = []
+        for trial_id in trial_ids:
+            trial = DistributedTrial(trial_id, self._assign_private_channel(trial_id))
+            context.append(
+                _TaskContext(
+                    trial,
+                    stop_flag=self._synchronizer.stop_flag,
+                    task_state_var=self._synchronizer.set_initial_state(),
+                )
+            )
+
+        return context
 
     def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
         # HACK: It's kinda naughty to access _trial_id, but this is gonna make
         # our lifes much easier in messaging system.
-        distributable = _distributable(objective)
         trial_ids = [study.ask()._trial_id for _ in range(self._n_trials)]
-        trials = [DistributedTrial(id, self._assign_private_channel(id)) for id in trial_ids]
+        distributable = _distributable(objective, with_supervisor=self._is_distributed)
+        trials = self._create_trials_with_context(trial_ids)
         self._futures = self._client.map(distributable, trials, pure=False)
         for future in self._futures:
             future.add_done_callback(self._ensure_safe_exit)
