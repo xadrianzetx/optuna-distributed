@@ -181,16 +181,13 @@ class DistributedOptimizationManager(OptimizationManager):
         return Queue(self._private_channels[trial_id])
 
     def stop_optimization(self) -> None:
-        # This will only cancel scheduled tasks.
-        # There's not much we can do about ones already running.
-        # https://stackoverflow.com/a/49203129
-        # https://github.com/dask/distributed/issues/4694
-
-        # FIXME: Could use variable as global stopping condition for all workers,
-        # but we can't expect users to check for it in objective function.
-        # I guess objective wrapper must check for it in another thread and be able to interrupt.
-        # https://docs.dask.org/en/stable/futures.html#distributed.Variable
-        self._client.cancel(self._futures)
+        # Only want to cleanup cluster that does not belong to us.
+        # TODO(xadrianzetx) Notebooks might be a special case (cleanup even with LocalCluster).
+        if self._is_distributed:
+            self._client.cancel(self._futures)
+            # Twice the timeout of task connection.
+            # This way even tasks waiting for message will have chance to exit.
+            self._synchronizer.emit_stop_and_wait(patience=10)
 
     def should_end_optimization(self) -> bool:
         return self._completed_trials == self._n_trials
