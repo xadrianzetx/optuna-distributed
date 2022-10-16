@@ -151,6 +151,7 @@ class DistributedOptimizationManager(OptimizationManager):
                 # that allows workers to repeat messages to master.
                 # A deduplication algorithm would go here then.
                 yield self._message_queue.get()
+
             except asyncio.TimeoutError:
                 # Pumping event loop with heartbeat messages on timeout
                 # allows us to handle potential problems gracefully
