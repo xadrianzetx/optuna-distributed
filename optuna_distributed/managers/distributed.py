@@ -217,8 +217,7 @@ def _distributable(func: ObjectiveFuncType, with_supervisor: bool) -> Distributa
             context.trial.connection.put(message)
 
         except WorkerInterrupted:
-            # FIXME remove this dbgln.
-            print(f"Trial {context.trial.trial_id} interrupted.")
+            ...
 
         except Exception as e:
             exc_info = sys.exc_info()
