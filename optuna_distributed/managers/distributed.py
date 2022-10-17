@@ -133,11 +133,16 @@ class DistributedOptimizationManager(OptimizationManager):
         self._private_channels[trial_id] = private_channel
         return Queue(self._public_channel, private_channel, timeout=5)
 
-    def _create_trials_with_context(self, trial_ids: List[int]) -> List[_TaskContext]:
-        context: List[_TaskContext] = []
-        for trial_id in trial_ids:
-            trial = DistributedTrial(trial_id, self._assign_private_channel(trial_id))
-            context.append(
+    def _create_trials(self, study: "Study") -> List[DistributedTrial]:
+        # HACK: It's kinda naughty to access _trial_id, but this is gonna make
+        # our lifes much easier in messaging system.
+        trial_ids = [study.ask()._trial_id for _ in range(self._n_trials)]
+        return [DistributedTrial(tid, self._assign_private_channel(tid)) for tid in trial_ids]
+
+    def _add_task_context(self, trials: List[DistributedTrial]) -> List[_TaskContext]:
+        trials_with_context: List[_TaskContext] = []
+        for trial in trials:
+            trials_with_context.append(
                 _TaskContext(
                     trial,
                     stop_flag=self._synchronizer.stop_flag,
@@ -145,14 +150,11 @@ class DistributedOptimizationManager(OptimizationManager):
                 )
             )
 
-        return context
+        return trials_with_context
 
     def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
-        # HACK: It's kinda naughty to access _trial_id, but this is gonna make
-        # our lifes much easier in messaging system.
-        trial_ids = [study.ask()._trial_id for _ in range(self._n_trials)]
         distributable = _distributable(objective, with_supervisor=self._is_distributed)
-        trials = self._create_trials_with_context(trial_ids)
+        trials = self._add_task_context(self._create_trials(study))
         self._futures = self._client.map(distributable, trials, pure=False)
         for future in self._futures:
             future.add_done_callback(self._ensure_safe_exit)
