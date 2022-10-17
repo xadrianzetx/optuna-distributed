@@ -3,12 +3,16 @@ import multiprocessing
 import time
 
 from dask.distributed import Client
+from dask.distributed import Variable
 from dask.distributed import wait
 import optuna
+import pytest
 
 from optuna_distributed.managers import DistributedOptimizationManager
 from optuna_distributed.managers import LocalOptimizationManager
 from optuna_distributed.managers import ObjectiveFuncType
+from optuna_distributed.managers.distributed import _StateSynchronizer
+from optuna_distributed.managers.distributed import _TaskState
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import HeartbeatMessage
 from optuna_distributed.messages import ResponseMessage
@@ -99,6 +103,33 @@ def test_distributed_connection_management(client: Client) -> None:
             assert message.data["requested"] == message.data["actual"]
         if manager.should_end_optimization():
             break
+
+
+def test_synchronizer_optimization_enabled() -> None:
+    synchronizer = _StateSynchronizer()
+    optimization_enabled = Variable(synchronizer.stop_flag)
+    assert optimization_enabled.get()
+
+
+def test_synchronizer_emits_stop() -> None:
+    synchronizer = _StateSynchronizer()
+    synchronizer.emit_stop_and_wait(1)
+    optimization_enabled = Variable(synchronizer.stop_flag)
+    assert not optimization_enabled.get()
+
+
+def test_synchronizer_states_created() -> None:
+    synchronizer = _StateSynchronizer()
+    states = [Variable(synchronizer.set_initial_state()) for _ in range(10)]
+    assert all(state.get() == _TaskState.WAITING for state in states)
+
+
+def test_synchronizer_timeout() -> None:
+    synchronizer = _StateSynchronizer()
+    task_state = Variable(synchronizer.set_initial_state())
+    task_state.set(_TaskState.RUNNING)
+    with pytest.raises(TimeoutError):
+        synchronizer.emit_stop_and_wait(0)
 
 
 def test_local_get_message() -> None:
