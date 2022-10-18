@@ -68,16 +68,26 @@ def test_distributed_should_end_optimization(client: Client) -> None:
 
 
 def test_distributed_stops_optimziation(client: Client) -> None:
+    uninterrupted_execution_time = 100
+
     def _objective(trial: DistributedTrial) -> float:
-        time.sleep(2.0)
+        # Sleep needs to be fragemnted to read error indicator.
+        for _ in range(uninterrupted_execution_time):
+            time.sleep(1.0)
         return 0.0
 
     study = optuna.create_study()
     manager = DistributedOptimizationManager(client, n_trials=5)
     manager.create_futures(study, _objective)
+    stopped_at = time.time()
     manager.stop_optimization()
+    interrupted_execution_time = time.time() - stopped_at
+    assert interrupted_execution_time < uninterrupted_execution_time
     for future in manager._futures:
         assert future.cancelled()
+
+    for task_state in manager._synchronizer._task_states:
+        assert task_state.get() != _TaskState.RUNNING
 
 
 def test_distributed_connection_management(client: Client) -> None:
