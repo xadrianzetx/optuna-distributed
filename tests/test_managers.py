@@ -1,6 +1,6 @@
-import sys
 from dataclasses import dataclass
 import multiprocessing
+import sys
 import time
 
 from dask.distributed import Client
