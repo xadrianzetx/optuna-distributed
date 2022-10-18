@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 import multiprocessing
 import time
@@ -67,6 +68,7 @@ def test_distributed_should_end_optimization(client: Client) -> None:
     assert closing_messages_recieved == n_trials
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="Requires Python 3.8 or higher")
 def test_distributed_stops_optimziation(client: Client) -> None:
     uninterrupted_execution_time = 100
 
