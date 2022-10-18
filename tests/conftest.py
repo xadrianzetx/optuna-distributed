@@ -1,9 +1,11 @@
 from dask.distributed import Client
+from dask.distributed import LocalCluster
 import optuna
 import pytest
 
 
-_test_client = Client(n_workers=1, threads_per_worker=1)
+_test_cluster = LocalCluster(n_workers=1, threads_per_worker=1)
+_test_client = Client(_test_cluster.scheduler_address)
 
 
 @pytest.fixture

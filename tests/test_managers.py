@@ -1,14 +1,19 @@
 from dataclasses import dataclass
 import multiprocessing
+import sys
 import time
 
 from dask.distributed import Client
+from dask.distributed import Variable
 from dask.distributed import wait
 import optuna
+import pytest
 
 from optuna_distributed.managers import DistributedOptimizationManager
 from optuna_distributed.managers import LocalOptimizationManager
 from optuna_distributed.managers import ObjectiveFuncType
+from optuna_distributed.managers.distributed import _StateSynchronizer
+from optuna_distributed.managers.distributed import _TaskState
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import HeartbeatMessage
 from optuna_distributed.messages import ResponseMessage
@@ -63,17 +68,28 @@ def test_distributed_should_end_optimization(client: Client) -> None:
     assert closing_messages_recieved == n_trials
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="Requires Python 3.8 or higher")
 def test_distributed_stops_optimziation(client: Client) -> None:
+    uninterrupted_execution_time = 100
+
     def _objective(trial: DistributedTrial) -> float:
-        time.sleep(2.0)
+        # Sleep needs to be fragemnted to read error indicator.
+        for _ in range(uninterrupted_execution_time):
+            time.sleep(1.0)
         return 0.0
 
     study = optuna.create_study()
     manager = DistributedOptimizationManager(client, n_trials=5)
     manager.create_futures(study, _objective)
+    stopped_at = time.time()
     manager.stop_optimization()
+    interrupted_execution_time = time.time() - stopped_at
+    assert interrupted_execution_time < uninterrupted_execution_time
     for future in manager._futures:
         assert future.cancelled()
+
+    for task_state in manager._synchronizer._task_states:
+        assert task_state.get() != _TaskState.RUNNING
 
 
 def test_distributed_connection_management(client: Client) -> None:
@@ -99,6 +115,33 @@ def test_distributed_connection_management(client: Client) -> None:
             assert message.data["requested"] == message.data["actual"]
         if manager.should_end_optimization():
             break
+
+
+def test_synchronizer_optimization_enabled() -> None:
+    synchronizer = _StateSynchronizer()
+    optimization_enabled = Variable(synchronizer.stop_flag)
+    assert optimization_enabled.get()
+
+
+def test_synchronizer_emits_stop() -> None:
+    synchronizer = _StateSynchronizer()
+    synchronizer.emit_stop_and_wait(1)
+    optimization_enabled = Variable(synchronizer.stop_flag)
+    assert not optimization_enabled.get()
+
+
+def test_synchronizer_states_created() -> None:
+    synchronizer = _StateSynchronizer()
+    states = [Variable(synchronizer.set_initial_state()) for _ in range(10)]
+    assert all(state.get() == _TaskState.WAITING for state in states)
+
+
+def test_synchronizer_timeout() -> None:
+    synchronizer = _StateSynchronizer()
+    task_state = Variable(synchronizer.set_initial_state())
+    task_state.set(_TaskState.RUNNING)
+    with pytest.raises(TimeoutError):
+        synchronizer.emit_stop_and_wait(0)
 
 
 def test_local_get_message() -> None:

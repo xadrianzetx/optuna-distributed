@@ -1,5 +1,13 @@
 import asyncio
+import ctypes
+from dataclasses import dataclass
+from enum import IntEnum
+import logging
 import sys
+import threading
+from threading import Thread
+import time
+from typing import Callable
 from typing import Dict
 from typing import Generator
 from typing import List
@@ -8,10 +16,11 @@ import uuid
 
 from dask.distributed import Client
 from dask.distributed import Future
+from dask.distributed import LocalCluster
+from dask.distributed import Variable
 from optuna.exceptions import TrialPruned
 
 from optuna_distributed.ipc import Queue
-from optuna_distributed.managers import DistributableFuncType
 from optuna_distributed.managers import ObjectiveFuncType
 from optuna_distributed.managers import OptimizationManager
 from optuna_distributed.messages import CompletedMessage
@@ -27,6 +36,54 @@ if TYPE_CHECKING:
     from optuna_distributed.eventloop import EventLoop
     from optuna_distributed.ipc import IPCPrimitive
     from optuna_distributed.messages import Message
+
+
+DistributableWithContext = Callable[["_TaskContext"], None]
+_logger = logging.getLogger(__name__)
+
+
+class WorkerInterrupted(Exception):
+    ...
+
+
+class _TaskState(IntEnum):
+    WAITING = 0
+    RUNNING = 1
+    FINISHED = 2
+
+
+@dataclass
+class _TaskContext:
+    trial: DistributedTrial
+    stop_flag: str
+    state_id: str
+
+
+class _StateSynchronizer:
+    def __init__(self) -> None:
+        self._optimization_enabled = Variable()
+        self._optimization_enabled.set(True)
+        self._task_states: List[Variable] = []
+
+    @property
+    def stop_flag(self) -> str:
+        return self._optimization_enabled.name
+
+    def set_initial_state(self) -> str:
+        task_state = Variable()
+        task_state.set(_TaskState.WAITING)
+        self._task_states.append(task_state)
+        return task_state.name
+
+    def emit_stop_and_wait(self, patience: int) -> None:
+        self._optimization_enabled.set(False)
+        disabled_at = time.time()
+        _logger.info("Interrupting running tasks...")
+        while any(state.get() == _TaskState.RUNNING for state in self._task_states):
+            if time.time() - disabled_at > patience:
+                raise TimeoutError("Timed out while trying to interrupt running tasks.")
+            time.sleep(0.1)
+        _logger.info("All tasks have been stopped.")
 
 
 class DistributedOptimizationManager(OptimizationManager):
@@ -50,6 +107,8 @@ class DistributedOptimizationManager(OptimizationManager):
         self._n_trials = n_trials
         self._completed_trials = 0
         self._public_channel = str(uuid.uuid4())
+        self._synchronizer = _StateSynchronizer()
+        self._is_cluster_remote = not isinstance(client.cluster, LocalCluster)
 
         # Manager has write access to its own message queue as a sort of health check.
         # Basically that means we can pump event loop from callbacks running in
@@ -72,14 +131,30 @@ class DistributedOptimizationManager(OptimizationManager):
     def _assign_private_channel(self, trial_id: int) -> "Queue":
         private_channel = str(uuid.uuid4())
         self._private_channels[trial_id] = private_channel
-        return Queue(self._public_channel, private_channel)
+        return Queue(self._public_channel, private_channel, timeout=5)
 
-    def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
+    def _create_trials(self, study: "Study") -> List[DistributedTrial]:
         # HACK: It's kinda naughty to access _trial_id, but this is gonna make
         # our lifes much easier in messaging system.
-        distributable = _distributable(objective)
         trial_ids = [study.ask()._trial_id for _ in range(self._n_trials)]
-        trials = [DistributedTrial(id, self._assign_private_channel(id)) for id in trial_ids]
+        return [DistributedTrial(tid, self._assign_private_channel(tid)) for tid in trial_ids]
+
+    def _add_task_context(self, trials: List[DistributedTrial]) -> List[_TaskContext]:
+        trials_with_context: List[_TaskContext] = []
+        for trial in trials:
+            trials_with_context.append(
+                _TaskContext(
+                    trial,
+                    stop_flag=self._synchronizer.stop_flag,
+                    state_id=self._synchronizer.set_initial_state(),
+                )
+            )
+
+        return trials_with_context
+
+    def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
+        distributable = _distributable(objective, with_supervisor=self._is_cluster_remote)
+        trials = self._add_task_context(self._create_trials(study))
         self._futures = self._client.map(distributable, trials, pure=False)
         for future in self._futures:
             future.add_done_callback(self._ensure_safe_exit)
@@ -94,6 +169,7 @@ class DistributedOptimizationManager(OptimizationManager):
                 # that allows workers to repeat messages to master.
                 # A deduplication algorithm would go here then.
                 yield self._message_queue.get()
+
             except asyncio.TimeoutError:
                 # Pumping event loop with heartbeat messages on timeout
                 # allows us to handle potential problems gracefully
@@ -107,16 +183,13 @@ class DistributedOptimizationManager(OptimizationManager):
         return Queue(self._private_channels[trial_id])
 
     def stop_optimization(self) -> None:
-        # This will only cancel scheduled tasks.
-        # There's not much we can do about ones already running.
-        # https://stackoverflow.com/a/49203129
-        # https://github.com/dask/distributed/issues/4694
-
-        # FIXME: Could use variable as global stopping condition for all workers,
-        # but we can't expect users to check for it in objective function.
-        # I guess objective wrapper must check for it in another thread and be able to interrupt.
-        # https://docs.dask.org/en/stable/futures.html#distributed.Variable
+        # Only want to cleanup cluster that does not belong to us.
+        # TODO(xadrianzetx) Notebooks might be a special case (cleanup even with LocalCluster).
         self._client.cancel(self._futures)
+        if self._is_cluster_remote:
+            # Twice the timeout of task connection.
+            # This way even tasks waiting for message will have chance to exit.
+            self._synchronizer.emit_stop_and_wait(patience=10)
 
     def should_end_optimization(self) -> bool:
         return self._completed_trials == self._n_trials
@@ -125,25 +198,53 @@ class DistributedOptimizationManager(OptimizationManager):
         self._completed_trials += 1
 
 
-def _distributable(func: ObjectiveFuncType) -> DistributableFuncType:
-    def _wrapper(trial: DistributedTrial) -> None:
+def _distributable(func: ObjectiveFuncType, with_supervisor: bool) -> DistributableWithContext:
+    def _wrapper(context: _TaskContext) -> None:
         # FIXME: Re-introduce task deduplication.
+        task_state = Variable(context.state_id)
+        task_state.set(_TaskState.RUNNING)
         message: Message
+
         try:
-            value_or_values = func(trial)
-            message = CompletedMessage(trial.trial_id, value_or_values)
-            trial.connection.put(message)
+            if with_supervisor:
+                args = (threading.get_ident(), context)
+                Thread(target=_task_supervisor, args=args, daemon=True).start()
+
+            value_or_values = func(context.trial)
+            message = CompletedMessage(context.trial.trial_id, value_or_values)
+            context.trial.connection.put(message)
 
         except TrialPruned as e:
-            message = PrunedMessage(trial.trial_id, e)
-            trial.connection.put(message)
+            message = PrunedMessage(context.trial.trial_id, e)
+            context.trial.connection.put(message)
+
+        except WorkerInterrupted:
+            ...
 
         except Exception as e:
             exc_info = sys.exc_info()
-            message = FailedMessage(trial.trial_id, e, exc_info)
-            trial.connection.put(message)
+            message = FailedMessage(context.trial.trial_id, e, exc_info)
+            context.trial.connection.put(message)
 
         finally:
-            trial.connection.close()
+            context.trial.connection.close()
+            task_state.set(_TaskState.FINISHED)
 
     return _wrapper
+
+
+def _task_supervisor(thread_id: int, context: _TaskContext) -> None:
+    optimization_enabled = Variable(context.stop_flag)
+    task_state = Variable(context.state_id)
+    while True:
+        time.sleep(0.1)
+        if task_state.get() == _TaskState.FINISHED:
+            break
+
+        if not optimization_enabled.get():
+            # https://gist.github.com/liuw/2407154
+            # https://distributed.dask.org/en/stable/worker-state.html#task-cancellation
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                ctypes.c_long(thread_id), ctypes.py_object(WorkerInterrupted)
+            )
+            break
