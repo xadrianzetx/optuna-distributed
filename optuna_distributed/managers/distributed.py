@@ -56,7 +56,7 @@ class _TaskState(IntEnum):
 class _TaskContext:
     trial: DistributedTrial
     stop_flag: str
-    task_state_var: str
+    state_id: str
 
 
 class _StateSynchronizer:
@@ -108,7 +108,7 @@ class DistributedOptimizationManager(OptimizationManager):
         self._completed_trials = 0
         self._public_channel = str(uuid.uuid4())
         self._synchronizer = _StateSynchronizer()
-        self._is_distributed = not isinstance(client.cluster, LocalCluster)
+        self._is_cluster_remote = not isinstance(client.cluster, LocalCluster)
 
         # Manager has write access to its own message queue as a sort of health check.
         # Basically that means we can pump event loop from callbacks running in
@@ -146,14 +146,14 @@ class DistributedOptimizationManager(OptimizationManager):
                 _TaskContext(
                     trial,
                     stop_flag=self._synchronizer.stop_flag,
-                    task_state_var=self._synchronizer.set_initial_state(),
+                    state_id=self._synchronizer.set_initial_state(),
                 )
             )
 
         return trials_with_context
 
     def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
-        distributable = _distributable(objective, with_supervisor=self._is_distributed)
+        distributable = _distributable(objective, with_supervisor=self._is_cluster_remote)
         trials = self._add_task_context(self._create_trials(study))
         self._futures = self._client.map(distributable, trials, pure=False)
         for future in self._futures:
@@ -186,7 +186,7 @@ class DistributedOptimizationManager(OptimizationManager):
         # Only want to cleanup cluster that does not belong to us.
         # TODO(xadrianzetx) Notebooks might be a special case (cleanup even with LocalCluster).
         self._client.cancel(self._futures)
-        if self._is_distributed:
+        if self._is_cluster_remote:
             # Twice the timeout of task connection.
             # This way even tasks waiting for message will have chance to exit.
             self._synchronizer.emit_stop_and_wait(patience=10)
@@ -201,7 +201,7 @@ class DistributedOptimizationManager(OptimizationManager):
 def _distributable(func: ObjectiveFuncType, with_supervisor: bool) -> DistributableWithContext:
     def _wrapper(context: _TaskContext) -> None:
         # FIXME: Re-introduce task deduplication.
-        task_state = Variable(context.task_state_var)
+        task_state = Variable(context.state_id)
         task_state.set(_TaskState.RUNNING)
         message: Message
 
@@ -235,7 +235,7 @@ def _distributable(func: ObjectiveFuncType, with_supervisor: bool) -> Distributa
 
 def _task_supervisor(thread_id: int, context: _TaskContext) -> None:
     optimization_enabled = Variable(context.stop_flag)
-    task_state = Variable(context.task_state_var)
+    task_state = Variable(context.state_id)
     while True:
         time.sleep(0.1)
         if task_state.get() == _TaskState.FINISHED:
