@@ -5,7 +5,6 @@ from optuna_distributed.messages.heartbeat import HeartbeatMessage
 from optuna_distributed.messages.property import TrialProperty
 from optuna_distributed.messages.property import TrialPropertyMessage
 from optuna_distributed.messages.pruned import PrunedMessage
-from optuna_distributed.messages.repeated import RepeatedTrialMessage
 from optuna_distributed.messages.report import ReportMessage
 from optuna_distributed.messages.response import ResponseMessage
 from optuna_distributed.messages.setattr import AttributeType
@@ -21,7 +20,6 @@ __all__ = [
     "SuggestMessage",
     "CompletedMessage",
     "FailedMessage",
-    "RepeatedTrialMessage",
     "PrunedMessage",
     "ReportMessage",
     "ShouldPruneMessage",

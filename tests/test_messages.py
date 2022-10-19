@@ -21,7 +21,6 @@ from optuna_distributed.messages import FailedMessage
 from optuna_distributed.messages import HeartbeatMessage
 from optuna_distributed.messages import Message
 from optuna_distributed.messages import PrunedMessage
-from optuna_distributed.messages import RepeatedTrialMessage
 from optuna_distributed.messages import ReportMessage
 from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import SetAttributeMessage
@@ -177,15 +176,6 @@ def test_should_prune(study: Study, manager: MockOptimizationManager) -> None:
     trial = study.get_trials(deepcopy=False, states=(TrialState.RUNNING,))
     assert len(trial) == 1
     assert trial[0]._trial_id == 0
-
-
-def test_repeated_trial(study: Study, manager: MockOptimizationManager) -> None:
-    msg = RepeatedTrialMessage(0)
-    assert not msg.closing
-
-    study.tell(0, state=TrialState.PRUNED)
-    msg.process(study, manager)
-    assert _message_responds_with(True, manager=manager)
 
 
 def test_report_intermediate(study: Study, manager: MockOptimizationManager) -> None:
