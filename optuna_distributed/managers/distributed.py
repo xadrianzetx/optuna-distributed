@@ -200,8 +200,10 @@ class DistributedOptimizationManager(OptimizationManager):
 
 def _distributable(func: ObjectiveFuncType, with_supervisor: bool) -> DistributableWithContext:
     def _wrapper(context: _TaskContext) -> None:
-        # FIXME: Re-introduce task deduplication.
         task_state = Variable(context.state_id)
+        if task_state.get() != _TaskState.WAITING:
+            return
+
         task_state.set(_TaskState.RUNNING)
         message: Message
 

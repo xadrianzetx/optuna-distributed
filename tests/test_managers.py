@@ -2,6 +2,8 @@ from dataclasses import dataclass
 import multiprocessing
 import sys
 import time
+from unittest.mock import Mock
+import uuid
 
 from dask.distributed import Client
 from dask.distributed import Variable
@@ -13,7 +15,9 @@ from optuna_distributed.managers import DistributedOptimizationManager
 from optuna_distributed.managers import LocalOptimizationManager
 from optuna_distributed.managers import ObjectiveFuncType
 from optuna_distributed.managers.distributed import _StateSynchronizer
+from optuna_distributed.managers.distributed import _TaskContext
 from optuna_distributed.managers.distributed import _TaskState
+from optuna_distributed.managers.distributed import _distributable
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import HeartbeatMessage
 from optuna_distributed.messages import ResponseMessage
@@ -115,6 +119,27 @@ def test_distributed_connection_management(client: Client) -> None:
             assert message.data["requested"] == message.data["actual"]
         if manager.should_end_optimization():
             break
+
+
+def test_distributed_task_deduped(client: Client) -> None:
+    def _objective(trial: DistributedTrial) -> float:
+        run_count = Variable("run_count")
+        run_count.set(run_count.get() + 1)
+        return 0.0
+
+    run_count = Variable("run_count")
+    run_count.set(0)
+    state_id = uuid.uuid4().hex
+    Variable(state_id).set(_TaskState.WAITING)
+
+    # Simulate scenario where task run was repeated.
+    # https://stackoverflow.com/a/41965766
+    func = _distributable(_objective, with_supervisor=False)
+    context = _TaskContext(DistributedTrial(0, Mock()), stop_flag="foo", state_id=state_id)
+    for _ in range(5):
+        client.submit(func, context).result()
+
+    assert run_count.get() == 1
 
 
 def test_synchronizer_optimization_enabled() -> None:
