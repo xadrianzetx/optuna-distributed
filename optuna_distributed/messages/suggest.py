@@ -6,6 +6,7 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.study import Study
 from optuna.trial import Trial
 
 from optuna_distributed.messages import Message
@@ -13,8 +14,6 @@ from optuna_distributed.messages.response import ResponseMessage
 
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.managers import OptimizationManager
 
 
@@ -41,7 +40,7 @@ class SuggestMessage(Message):
         self._name = name
         self._distribution = distribution
 
-    def process(self, study: "Study", manager: "OptimizationManager") -> None:
+    def process(self, study: Study, manager: "OptimizationManager") -> None:
         trial = Trial(study, self._trial_id)
         value: Union[float, int, CategoricalChoiceType]
         if isinstance(self._distribution, FloatDistribution):

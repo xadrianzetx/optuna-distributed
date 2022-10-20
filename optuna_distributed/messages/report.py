@@ -1,13 +1,12 @@
 from typing import TYPE_CHECKING
 
+from optuna.study import Study
 from optuna.trial import Trial
 
 from optuna_distributed.messages import Message
 
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.managers import OptimizationManager
 
 
@@ -33,6 +32,6 @@ class ReportMessage(Message):
         self._value = value
         self._step = step
 
-    def process(self, study: "Study", manager: "OptimizationManager") -> None:
+    def process(self, study: Study, manager: "OptimizationManager") -> None:
         trial = Trial(study, self._trial_id)
         trial.report(self._value, self._step)

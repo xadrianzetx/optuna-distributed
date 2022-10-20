@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from optuna.study import Study
 from optuna.trial import Trial
 
 from optuna_distributed.messages import Message
@@ -7,8 +8,6 @@ from optuna_distributed.messages.response import ResponseMessage
 
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.managers import OptimizationManager
 
 
@@ -28,7 +27,7 @@ class ShouldPruneMessage(Message):
     def __init__(self, trial_id: int) -> None:
         self._trial_id = trial_id
 
-    def process(self, study: "Study", manager: "OptimizationManager") -> None:
+    def process(self, study: Study, manager: "OptimizationManager") -> None:
         trial = Trial(study, self._trial_id)
         conn = manager.get_connection(self._trial_id)
         conn.put(ResponseMessage(self._trial_id, trial.should_prune()))

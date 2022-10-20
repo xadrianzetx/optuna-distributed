@@ -1,11 +1,7 @@
 from multiprocessing.connection import Connection
-from typing import TYPE_CHECKING
 
 from optuna_distributed.ipc import IPCPrimitive
-
-
-if TYPE_CHECKING:
-    from optuna_distributed.messages import Message
+from optuna_distributed.messages import Message
 
 
 class Pipe(IPCPrimitive):
@@ -23,10 +19,10 @@ class Pipe(IPCPrimitive):
     def __init__(self, connection: Connection) -> None:
         self._connection = connection
 
-    def get(self) -> "Message":
+    def get(self) -> Message:
         return self._connection.recv()
 
-    def put(self, message: "Message") -> None:
+    def put(self, message: Message) -> None:
         return self._connection.send(message)
 
     def close(self) -> None:

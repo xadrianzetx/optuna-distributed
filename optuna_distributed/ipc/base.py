@@ -1,10 +1,7 @@
 import abc
 from abc import ABC
-from typing import TYPE_CHECKING
 
-
-if TYPE_CHECKING:
-    from optuna_distributed.messages.base import Message
+from optuna_distributed.messages.base import Message
 
 
 class IPCPrimitive(ABC):
@@ -15,12 +12,12 @@ class IPCPrimitive(ABC):
     """
 
     @abc.abstractmethod
-    def get(self) -> "Message":
+    def get(self) -> Message:
         """Retrieves a single message."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def put(self, message: "Message") -> None:
+    def put(self, message: Message) -> None:
         """Publishes a single message.
 
         Args:

@@ -2,12 +2,12 @@ from typing import Generic
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
+from optuna.study import Study
+
 from optuna_distributed.messages import Message
 
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.managers import OptimizationManager
 
 
@@ -36,5 +36,5 @@ class ResponseMessage(Message, Generic[T]):
         self.trial_id = trial_id
         self.data = data
 
-    def process(self, study: "Study", manager: "OptimizationManager") -> None:
+    def process(self, study: Study, manager: "OptimizationManager") -> None:
         ...

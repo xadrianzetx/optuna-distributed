@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from optuna.study import Study
 from optuna.trial import Trial
 from typing_extensions import Literal
 
@@ -8,8 +9,6 @@ from optuna_distributed.messages.response import ResponseMessage
 
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.managers import OptimizationManager
 
 
@@ -34,7 +33,7 @@ class TrialPropertyMessage(Message):
         self._trial_id = trial_id
         self._property = property
 
-    def process(self, study: "Study", manager: "OptimizationManager") -> None:
+    def process(self, study: Study, manager: "OptimizationManager") -> None:
         trial = Trial(study, self._trial_id)
         conn = manager.get_connection(self._trial_id)
         conn.put(ResponseMessage(self._trial_id, getattr(trial, self._property)))

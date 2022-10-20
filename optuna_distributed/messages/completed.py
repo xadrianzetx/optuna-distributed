@@ -4,6 +4,7 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
+from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -12,8 +13,6 @@ from optuna_distributed.messages import Message
 
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.managers import OptimizationManager
 
 
@@ -40,7 +39,7 @@ class CompletedMessage(Message):
         self._trial_id = trial_id
         self._value_or_values = value_or_values
 
-    def process(self, study: "Study", manager: "OptimizationManager") -> None:
+    def process(self, study: Study, manager: "OptimizationManager") -> None:
         trial = Trial(study, self._trial_id)
         try:
             frozen_trial = study.tell(trial, self._value_or_values, skip_if_finished=True)
@@ -60,7 +59,7 @@ class CompletedMessage(Message):
                     "of the following error: STUDY_TELL_WARNING"
                 )
 
-    def _log_completed_trial(self, study: "Study", trial: FrozenTrial) -> None:
+    def _log_completed_trial(self, study: Study, trial: FrozenTrial) -> None:
         buffer = io.StringIO()
         is_multiobjective = len(trial.values) != 1
         form = "values" if is_multiobjective else "value"
