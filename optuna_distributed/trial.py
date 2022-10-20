@@ -3,7 +3,6 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import TYPE_CHECKING
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
@@ -11,6 +10,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 
+from optuna_distributed.ipc import IPCPrimitive
 from optuna_distributed.messages import ReportMessage
 from optuna_distributed.messages import ResponseMessage
 from optuna_distributed.messages import SetAttributeMessage
@@ -18,11 +18,7 @@ from optuna_distributed.messages import ShouldPruneMessage
 from optuna_distributed.messages import SuggestMessage
 from optuna_distributed.messages import TrialProperty
 from optuna_distributed.messages import TrialPropertyMessage
-
-
-if TYPE_CHECKING:
-    from optuna_distributed.ipc import IPCPrimitive
-    from optuna_distributed.messages.base import Message
+from optuna_distributed.messages.base import Message
 
 
 class DistributedTrial:
@@ -42,7 +38,7 @@ class DistributedTrial:
             An instance of :class:`~optuna_distributed.ipc.IPCPrimitive`.
     """
 
-    def __init__(self, trial_id: int, connection: "IPCPrimitive") -> None:
+    def __init__(self, trial_id: int, connection: IPCPrimitive) -> None:
         self.trial_id = trial_id
         self.connection = connection
 
@@ -54,7 +50,7 @@ class DistributedTrial:
         message = TrialPropertyMessage(self.trial_id, property)
         return self._send_message_and_wait_response(message)
 
-    def _send_message_and_wait_response(self, message: "Message") -> Any:
+    def _send_message_and_wait_response(self, message: Message) -> Any:
         self.connection.put(message)
         response = self.connection.get()
         assert isinstance(response, ResponseMessage)

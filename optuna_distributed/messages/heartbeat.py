@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
 
+from optuna.study import Study
+
 from optuna_distributed.messages.base import Message
 
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.managers.base import OptimizationManager
 
 
@@ -19,5 +19,5 @@ class HeartbeatMessage(Message):
 
     closing = False
 
-    def process(self, study: "Study", manager: "OptimizationManager") -> None:
+    def process(self, study: Study, manager: "OptimizationManager") -> None:
         ...

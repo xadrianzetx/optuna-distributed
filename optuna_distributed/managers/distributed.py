@@ -19,23 +19,22 @@ from dask.distributed import Future
 from dask.distributed import LocalCluster
 from dask.distributed import Variable
 from optuna.exceptions import TrialPruned
+from optuna.study import Study
 
+from optuna_distributed.ipc import IPCPrimitive
 from optuna_distributed.ipc import Queue
 from optuna_distributed.managers import ObjectiveFuncType
 from optuna_distributed.managers import OptimizationManager
 from optuna_distributed.messages import CompletedMessage
 from optuna_distributed.messages import FailedMessage
 from optuna_distributed.messages import HeartbeatMessage
+from optuna_distributed.messages import Message
 from optuna_distributed.messages import PrunedMessage
 from optuna_distributed.trial import DistributedTrial
 
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.eventloop import EventLoop
-    from optuna_distributed.ipc import IPCPrimitive
-    from optuna_distributed.messages import Message
 
 
 DistributableWithContext = Callable[["_TaskContext"], None]
@@ -133,7 +132,7 @@ class DistributedOptimizationManager(OptimizationManager):
         self._private_channels[trial_id] = private_channel
         return Queue(self._public_channel, private_channel, timeout=5)
 
-    def _create_trials(self, study: "Study") -> List[DistributedTrial]:
+    def _create_trials(self, study: Study) -> List[DistributedTrial]:
         # HACK: It's kinda naughty to access _trial_id, but this is gonna make
         # our lifes much easier in messaging system.
         trial_ids = [study.ask()._trial_id for _ in range(self._n_trials)]
@@ -152,7 +151,7 @@ class DistributedOptimizationManager(OptimizationManager):
 
         return trials_with_context
 
-    def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
+    def create_futures(self, study: Study, objective: ObjectiveFuncType) -> None:
         distributable = _distributable(objective, with_supervisor=self._is_cluster_remote)
         trials = self._add_task_context(self._create_trials(study))
         self._futures = self._client.map(distributable, trials, pure=False)
@@ -162,7 +161,7 @@ class DistributedOptimizationManager(OptimizationManager):
     def before_message(self, event_loop: "EventLoop") -> None:
         ...
 
-    def get_message(self) -> Generator["Message", None, None]:
+    def get_message(self) -> Generator[Message, None, None]:
         while True:
             try:
                 # TODO(xadrianzetx) At some point we might need a mechanism
@@ -179,7 +178,7 @@ class DistributedOptimizationManager(OptimizationManager):
     def after_message(self, event_loop: "EventLoop") -> None:
         ...
 
-    def get_connection(self, trial_id: int) -> "IPCPrimitive":
+    def get_connection(self, trial_id: int) -> IPCPrimitive:
         return Queue(self._private_channels[trial_id])
 
     def stop_optimization(self) -> None:

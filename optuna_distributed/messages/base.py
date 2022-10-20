@@ -2,10 +2,10 @@ import abc
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from optuna.study import Study
+
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.managers.base import OptimizationManager
 
 
@@ -22,7 +22,7 @@ class Message(ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def process(self, study: "Study", manager: "OptimizationManager") -> None:
+    def process(self, study: Study, manager: "OptimizationManager") -> None:
         """Process a message data with context available in main process.
 
         Concrete implementations of this method should contain operations that

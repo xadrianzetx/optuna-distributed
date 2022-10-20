@@ -9,8 +9,10 @@ from typing import Generator
 from typing import List
 from typing import TYPE_CHECKING
 
+from optuna import Study
 from optuna.exceptions import TrialPruned
 
+from optuna_distributed.ipc import IPCPrimitive
 from optuna_distributed.ipc import Pipe
 from optuna_distributed.managers import DistributableFuncType
 from optuna_distributed.managers import ObjectiveFuncType
@@ -24,10 +26,7 @@ from optuna_distributed.trial import DistributedTrial
 
 
 if TYPE_CHECKING:
-    from optuna import Study
-
     from optuna_distributed.eventloop import EventLoop
-    from optuna_distributed.ipc import IPCPrimitive
 
 
 class LocalOptimizationManager(OptimizationManager):
@@ -53,7 +52,7 @@ class LocalOptimizationManager(OptimizationManager):
         self._trials_remaining = n_trials - self._workers_to_spawn
         self._pool: Dict[int, Connection] = {}
 
-    def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
+    def create_futures(self, study: Study, objective: ObjectiveFuncType) -> None:
         distributable = _distributable(objective)
         trial_ids = [study.ask()._trial_id for _ in range(self._workers_to_spawn)]
         for trial_id in trial_ids:
@@ -93,7 +92,7 @@ class LocalOptimizationManager(OptimizationManager):
             self._trials_remaining -= self._workers_to_spawn
             self._workers_to_spawn = 0
 
-    def get_connection(self, trial_id: int) -> "IPCPrimitive":
+    def get_connection(self, trial_id: int) -> IPCPrimitive:
         return Pipe(self._pool[trial_id])
 
     def stop_optimization(self) -> None:

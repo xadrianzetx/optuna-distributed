@@ -1,14 +1,10 @@
 import pickle
 from typing import Optional
-from typing import TYPE_CHECKING
 
 from dask.distributed import Queue as DaskQueue
 
 from optuna_distributed.ipc import IPCPrimitive
-
-
-if TYPE_CHECKING:
-    from optuna_distributed.messages import Message
+from optuna_distributed.messages import Message
 
 
 class Queue(IPCPrimitive):
@@ -49,13 +45,13 @@ class Queue(IPCPrimitive):
                 self._subscriber = DaskQueue(self._recieving)
             self._initialized = True
 
-    def get(self) -> "Message":
+    def get(self) -> Message:
         self._initialize()
         if self._subscriber is None:
             raise RuntimeError("Trying to get message with publish-only connection.")
         return pickle.loads(self._subscriber.get(timeout=self._timeout))
 
-    def put(self, message: "Message") -> None:
+    def put(self, message: Message) -> None:
         self._initialize()
         assert self._publisher is not None
         self._publisher.put(pickle.dumps(message))

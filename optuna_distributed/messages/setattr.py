@@ -1,14 +1,13 @@
 from typing import Any
 from typing import TYPE_CHECKING
 
+from optuna.study import Study
 from typing_extensions import Literal
 
 from optuna_distributed.messages import Message
 
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.managers import OptimizationManager
 
 
@@ -37,7 +36,7 @@ class SetAttributeMessage(Message):
         self._key = key
         self._value = value
 
-    def process(self, study: "Study", manager: "OptimizationManager") -> None:
+    def process(self, study: Study, manager: "OptimizationManager") -> None:
         if self._kind == "user":
             study._storage.set_trial_user_attr(self._trial_id, self._key, self._value)
         elif self._kind == "system":

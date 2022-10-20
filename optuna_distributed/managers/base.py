@@ -6,15 +6,15 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
+from optuna.study import Study
+
+from optuna_distributed.ipc import IPCPrimitive
+from optuna_distributed.messages import Message
 from optuna_distributed.trial import DistributedTrial
 
 
 if TYPE_CHECKING:
-    from optuna.study import Study
-
     from optuna_distributed.eventloop import EventLoop
-    from optuna_distributed.ipc import IPCPrimitive
-    from optuna_distributed.messages import Message
 
 
 ObjectiveFuncType = Callable[[DistributedTrial], Union[float, Sequence[float]]]
@@ -30,7 +30,7 @@ class OptimizationManager(ABC):
     """
 
     @abc.abstractmethod
-    def create_futures(self, study: "Study", objective: ObjectiveFuncType) -> None:
+    def create_futures(self, study: Study, objective: ObjectiveFuncType) -> None:
         """Spawns a set of workers to run objective function.
 
         Args:
@@ -56,7 +56,7 @@ class OptimizationManager(ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_message(self) -> Generator["Message", None, None]:
+    def get_message(self) -> Generator[Message, None, None]:
         """Fetches incoming messages from workers."""
         raise NotImplementedError
 
@@ -73,7 +73,7 @@ class OptimizationManager(ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_connection(self, trial_id: int) -> "IPCPrimitive":
+    def get_connection(self, trial_id: int) -> IPCPrimitive:
         """Fetches private connection to worker.
 
         Args:
