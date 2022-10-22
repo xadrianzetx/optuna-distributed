@@ -51,6 +51,7 @@ class LocalOptimizationManager(OptimizationManager):
         self._workers_to_spawn = min(self._n_jobs, n_trials)
         self._trials_remaining = n_trials - self._workers_to_spawn
         self._pool: Dict[int, Connection] = {}
+        self._processes: List[Process] = []
 
     def create_futures(self, study: Study, objective: ObjectiveFuncType) -> None:
         distributable = _distributable(objective)
@@ -58,7 +59,9 @@ class LocalOptimizationManager(OptimizationManager):
         for trial_id in trial_ids:
             master, worker = MultiprocessingPipe()
             trial = DistributedTrial(trial_id, Pipe(worker))
-            Process(target=distributable, args=(trial,), daemon=True).start()
+            p = Process(target=distributable, args=(trial,), daemon=True)
+            p.start()
+            self._processes.append(p)
             self._pool[trial_id] = master
             worker.close()
 
