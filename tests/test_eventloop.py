@@ -1,3 +1,5 @@
+import time
+
 import optuna
 import pytest
 
@@ -27,3 +29,20 @@ def test_catches_on_trial_exception() -> None:
     manager = LocalOptimizationManager(n_trials, n_jobs=1)
     event_loop = EventLoop(study, manager, objective=_objective)
     event_loop.run(n_trials, catch=(ValueError,))
+
+
+def test_stops_optimization() -> None:
+    uninterrupted_execution_time = 60.0
+
+    def _objective(trial: DistributedTrial) -> float:
+        time.sleep(uninterrupted_execution_time)
+        return 1.0
+
+    n_trials = 1
+    study = optuna.create_study()
+    manager = LocalOptimizationManager(n_trials, n_jobs=1)
+    event_loop = EventLoop(study, manager, objective=_objective)
+    started_at = time.time()
+    event_loop.run(n_trials, timeout=1.0)
+    interrupted_execution_time = time.time() - started_at
+    assert interrupted_execution_time < uninterrupted_execution_time

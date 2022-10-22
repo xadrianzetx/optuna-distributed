@@ -56,6 +56,5 @@ if __name__ == "__main__":
 But there's more! All of the core Optuna APIs, including [storages, samplers](https://github.com/xadrianzetx/optuna-distributed/blob/main/examples/simple_storages.py) and [pruners](https://github.com/xadrianzetx/optuna-distributed/blob/main/examples/simple_pruning.py) are supported!
 
 ## What's missing?
-* Optimization with `timeout` is not currently supported.
 * Support for callbacks and Optuna integration modules.
 * Study APIs such as [`study.stop`](https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.stop) can't be called from trial at the moment.
