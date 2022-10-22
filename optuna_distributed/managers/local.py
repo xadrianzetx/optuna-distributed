@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 from multiprocessing import Pipe as MultiprocessingPipe
 from multiprocessing import Process
@@ -27,6 +28,9 @@ from optuna_distributed.trial import DistributedTrial
 
 if TYPE_CHECKING:
     from optuna_distributed.eventloop import EventLoop
+
+
+_logger = logging.getLogger(__name__)
 
 
 class LocalOptimizationManager(OptimizationManager):
@@ -99,9 +103,12 @@ class LocalOptimizationManager(OptimizationManager):
         return Pipe(self._pool[trial_id])
 
     def stop_optimization(self) -> None:
-        # Noop here, deamonic processes are terminated when parent exits.
-        # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.daemon
-        ...
+        _logger.info("Interrupting running tasks...")
+        for process in self._processes:
+            if process.is_alive():
+                process.kill()
+                process.join(timeout=10.0)
+        _logger.info("All tasks have been stopped.")
 
     def should_end_optimization(self) -> bool:
         return len(self._pool) == 0 and self._trials_remaining == 0
