@@ -203,6 +203,24 @@ def test_local_should_end_optimization() -> None:
     assert closing_messages_recieved == n_trials
 
 
+def test_local_stops_optimziation() -> None:
+    uninterrupted_execution_time = 5.0
+
+    def _objective(trial: DistributedTrial) -> float:
+        time.sleep(uninterrupted_execution_time)
+        return 0.0
+
+    study = optuna.create_study()
+    manager = LocalOptimizationManager(n_trials=10, n_jobs=1)
+    manager.create_futures(study, _objective)
+    stopped_at = time.time()
+    manager.stop_optimization()
+    interrupted_execution_time = time.time() - stopped_at
+    assert interrupted_execution_time < uninterrupted_execution_time
+    for process in manager._processes:
+        assert not process.is_alive()
+
+
 def test_local_connection_management() -> None:
     def _objective(trial: DistributedTrial) -> float:
         requested = trial.connection.get()

@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 from multiprocessing import Pipe as MultiprocessingPipe
 from multiprocessing import Process
@@ -29,6 +30,9 @@ if TYPE_CHECKING:
     from optuna_distributed.eventloop import EventLoop
 
 
+_logger = logging.getLogger(__name__)
+
+
 class LocalOptimizationManager(OptimizationManager):
     """Controls optimization process on local machine.
 
@@ -51,6 +55,7 @@ class LocalOptimizationManager(OptimizationManager):
         self._workers_to_spawn = min(self._n_jobs, n_trials)
         self._trials_remaining = n_trials - self._workers_to_spawn
         self._pool: Dict[int, Connection] = {}
+        self._processes: List[Process] = []
 
     def create_futures(self, study: Study, objective: ObjectiveFuncType) -> None:
         distributable = _distributable(objective)
@@ -58,7 +63,9 @@ class LocalOptimizationManager(OptimizationManager):
         for trial_id in trial_ids:
             master, worker = MultiprocessingPipe()
             trial = DistributedTrial(trial_id, Pipe(worker))
-            Process(target=distributable, args=(trial,), daemon=True).start()
+            p = Process(target=distributable, args=(trial,), daemon=True)
+            p.start()
+            self._processes.append(p)
             self._pool[trial_id] = master
             worker.close()
 
@@ -81,7 +88,7 @@ class LocalOptimizationManager(OptimizationManager):
                     self._pool.pop(trial_id)
 
             self._workers_to_spawn = min(self._n_jobs - len(self._pool), self._trials_remaining)
-            if len(messages) > 0:
+            if messages:
                 yield from messages
             else:
                 yield HeartbeatMessage()
@@ -96,9 +103,12 @@ class LocalOptimizationManager(OptimizationManager):
         return Pipe(self._pool[trial_id])
 
     def stop_optimization(self) -> None:
-        # Noop here, deamonic processes are terminated when parent exits.
-        # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.daemon
-        ...
+        _logger.info("Interrupting running tasks...")
+        for process in self._processes:
+            if process.is_alive():
+                process.kill()
+                process.join(timeout=10.0)
+        _logger.info("All tasks have been stopped.")
 
     def should_end_optimization(self) -> bool:
         return len(self._pool) == 0 and self._trials_remaining == 0
