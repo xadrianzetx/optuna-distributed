@@ -84,10 +84,14 @@ class EventLoop:
                     self._fail_unfinished_trials()
                     raise
 
-            if message.closing:
-                progress_bar.update((datetime.now() - time_start).total_seconds())
+            elapsed = (datetime.now() - time_start).total_seconds()
+            if timeout is not None and elapsed > timeout:
+                self.manager.stop_optimization()
+                break
 
-            # TODO(xadrianzetx): Stop optimization on timeout here.
+            if message.closing:
+                progress_bar.update(elapsed)
+
             # TODO(xadrianzetx): Call callbacks here.
             if self.manager.should_end_optimization():
                 progress_bar.close()
