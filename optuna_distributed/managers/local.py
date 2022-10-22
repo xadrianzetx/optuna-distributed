@@ -81,7 +81,7 @@ class LocalOptimizationManager(OptimizationManager):
                     self._pool.pop(trial_id)
 
             self._workers_to_spawn = min(self._n_jobs - len(self._pool), self._trials_remaining)
-            if len(messages) > 0:
+            if messages:
                 yield from messages
             else:
                 yield HeartbeatMessage()
