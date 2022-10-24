@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "optuna_distributed"
+name = "optuna-distributed"
 description = "Distributed hyperparameter optimization made easy"
 authors = [
   { name = "Adrian Zuber", email = "xadrianzetx@gmail.com" },
