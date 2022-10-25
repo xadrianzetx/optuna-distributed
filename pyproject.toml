@@ -35,7 +35,7 @@ classifiers = [
 dependencies = [
   "optuna",
   "dask[distributed]",
-  "colorlog",
+  "rich",
   "typing-extensions",
 ]
 dynamic = ["version", "readme"]

@@ -1,19 +1,15 @@
 from datetime import datetime
 from typing import Any
-from typing import Callable
-from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Type
 
-# FIXME: We should probably implement our own progress bar.
-from optuna.progress_bar import _ProgressBar
 from optuna.study import Study
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 from optuna_distributed.managers import ObjectiveFuncType
 from optuna_distributed.managers import OptimizationManager
+from optuna_distributed.terminal import Terminal
 
 
 class EventLoop:
@@ -45,32 +41,23 @@ class EventLoop:
 
     def run(
         self,
-        n_trials: Optional[int] = None,
+        terminal: Terminal,
         timeout: Optional[float] = None,
         catch: Tuple[Type[Exception], ...] = (),
-        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
-        show_progress_bar: bool = False,
         *args: Any,
         **kwargs: Any,
     ) -> None:
         """Starts the event loop.
 
         Args:
-            n_trials:
-                The number of trials for each process.
+            terminal:
+                An instance of :obj:`optuna_distributed.terminal.Terminal`.
             timeout:
                 Stops study after the given number of second(s).
             catch:
                 A tuple of exceptions to ignore if any is raised while optimizing a function.
-            callbacks:
-                List of callback functions that are invoked at the end of each trial. Not supported
-                at the moment.
-            show_progress_bar:
-                A flag to include tqdm-style progress bar.
         """
         time_start = datetime.now()
-        progress_bar = _ProgressBar(show_progress_bar, n_trials, timeout)
-
         self.manager.create_futures(self.study, self.objective)
         for message in self.manager.get_message():
             try:
@@ -80,21 +67,23 @@ class EventLoop:
 
             except Exception as e:
                 if not isinstance(e, catch):
-                    self.manager.stop_optimization()
-                    self._fail_unfinished_trials()
+                    with terminal.spin_while_trials_interrupted():
+                        self.manager.stop_optimization()
+                        self._fail_unfinished_trials()
                     raise
 
             elapsed = (datetime.now() - time_start).total_seconds()
             if timeout is not None and elapsed > timeout:
-                self.manager.stop_optimization()
+                with terminal.spin_while_trials_interrupted():
+                    self.manager.stop_optimization()
                 break
 
             if message.closing:
-                progress_bar.update(elapsed)
+                terminal.update_progress_bar()
 
             # TODO(xadrianzetx): Call callbacks here.
             if self.manager.should_end_optimization():
-                progress_bar.close()
+                terminal.close_progress_bar()
                 break
 
     def _fail_unfinished_trials(self) -> None:
