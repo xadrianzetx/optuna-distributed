@@ -153,14 +153,14 @@ class DistributedStudy:
             n_trials:
                 The number of trials to run in total.
             timeout:
-                Stop study after the given number of second(s). Currently noop.
+                Stop study after the given number of second(s).
             n_jobs:
                 The number of parallel jobs when using multiprocessing backend. Values less than
                 one or greater than :obj:`multiprocessing.cpu_count()` will default to number of
                 logical CPU cores available.
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
-                in this argument. Currently noop.
+                in this argument.
             callbacks:
                 List of callback functions that are invoked at the end of each trial. Currently
                 not supported.
