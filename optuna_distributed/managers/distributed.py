@@ -2,7 +2,6 @@ import asyncio
 import ctypes
 from dataclasses import dataclass
 from enum import IntEnum
-import logging
 import sys
 import threading
 from threading import Thread
@@ -38,7 +37,6 @@ if TYPE_CHECKING:
 
 
 DistributableWithContext = Callable[["_TaskContext"], None]
-_logger = logging.getLogger(__name__)
 
 
 class WorkerInterrupted(Exception):
@@ -77,12 +75,10 @@ class _StateSynchronizer:
     def emit_stop_and_wait(self, patience: int) -> None:
         self._optimization_enabled.set(False)
         disabled_at = time.time()
-        _logger.info("Interrupting running tasks...")
         while any(state.get() == _TaskState.RUNNING for state in self._task_states):
             if time.time() - disabled_at > patience:
                 raise TimeoutError("Timed out while trying to interrupt running tasks.")
             time.sleep(0.1)
-        _logger.info("All tasks have been stopped.")
 
 
 class DistributedOptimizationManager(OptimizationManager):
