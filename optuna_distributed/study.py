@@ -23,6 +23,7 @@ from optuna_distributed.eventloop import EventLoop
 from optuna_distributed.managers import DistributedOptimizationManager
 from optuna_distributed.managers import LocalOptimizationManager
 from optuna_distributed.managers import ObjectiveFuncType
+from optuna_distributed.terminal import Terminal
 
 
 if TYPE_CHECKING:
@@ -170,6 +171,7 @@ class DistributedStudy:
         if n_trials is None:
             raise ValueError("Only finite number of trials supported at the moment.")
 
+        terminal = Terminal(show_progress_bar, n_trials, timeout)
         manager = (
             DistributedOptimizationManager(self._client, n_trials)
             if self._client is not None
@@ -178,10 +180,12 @@ class DistributedStudy:
 
         try:
             event_loop = EventLoop(self._study, manager, objective=func)
-            event_loop.run(n_trials, timeout, catch, callbacks, show_progress_bar)
+            event_loop.run(terminal, timeout, catch)
 
         except KeyboardInterrupt:
-            manager.stop_optimization()
+            with terminal.spin_while_trials_interrupted():
+                manager.stop_optimization()
+
             states = (TrialState.RUNNING, TrialState.WAITING)
             trials = self._study.get_trials(deepcopy=False, states=states)
             for trial in trials:
