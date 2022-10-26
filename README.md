@@ -15,9 +15,8 @@ An extension to [Optuna](https://github.com/optuna/optuna) which makes distribut
 
 ## Installation
 
-At the moment there is no PyPI release of Optuna-distributed, but it still can be installed with `pip`:
 ```sh
-pip install git+https://github.com/xadrianzetx/optuna-distributed.git
+pip install optuna-distributed
 ```
 Optuna-distributed requires Python 3.7 or newer.
 
