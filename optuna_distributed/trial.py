@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import TypeVar
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
@@ -19,6 +20,9 @@ from optuna_distributed.messages import SuggestMessage
 from optuna_distributed.messages import TrialProperty
 from optuna_distributed.messages import TrialPropertyMessage
 from optuna_distributed.messages.base import Message
+
+
+T = TypeVar("T", bound=CategoricalChoiceType)
 
 
 class DistributedTrial:
@@ -164,9 +168,7 @@ class DistributedTrial:
         distribution = IntDistribution(low, high, log=log, step=step)
         return self._suggest(name, distribution)
 
-    def suggest_categorical(
-        self, name: str, choices: Sequence[CategoricalChoiceType]
-    ) -> CategoricalChoiceType:
+    def suggest_categorical(self, name: str, choices: Sequence[T]) -> T:
         """Suggest a value for the categorical parameter.
 
         For complete documentation, please refer to:
