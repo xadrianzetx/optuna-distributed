@@ -11,7 +11,6 @@ import random
 import socket
 import time
 
-from dask.distributed import Client
 import optuna
 from optuna.samplers import NSGAIISampler
 from optuna.storages import RDBStorage
@@ -30,9 +29,10 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    # Dask client without cluster address specified acts as an alternative backend
-    # for asynchronous optimization on a single machine.
-    client = Client()
+    # Using Dask client, we can easily scale up to multiple machines.
+    # from dask.distributed import Client
+    # client = Client(<your.cluster.scheduler.address>)
+    client = None
 
     # All standard Optuna storage, sampler and pruner options are supported.
     storage = RDBStorage("sqlite:///:memory:")
@@ -56,3 +56,8 @@ if __name__ == "__main__":
     study.optimize(objective, n_trials=20)
     worker = study.best_trial.user_attrs["worker"]
     print(f"Best value: {study.best_value} (params: {study.best_params}) calculated by {worker}\n")
+
+    # We can specify the timeout.
+    print("Running additional trials in 2 seconds...")
+    study.optimize(objective, n_trials=100, timeout=2.0)
+    print("Best value: {} (params: {})\n".format(study.best_value, study.best_params))

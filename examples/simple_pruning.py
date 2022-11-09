@@ -11,7 +11,6 @@ You can run this example as follows:
     $ python simple_prunning.py
 """
 
-from dask.distributed import Client
 import optuna
 from optuna.trial import TrialState
 import sklearn.datasets
@@ -46,11 +45,12 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    # Optuna-distributed just wraps standard Optuna study. The resulting object behaves
-    # just like regular study, but optimization process is asynchronous.
-    study = optuna_distributed.from_study(
-        optuna.create_study(direction="maximize"), client=Client()
-    )
+    # Using Dask client, we can easily scale up to multiple machines.
+    # from dask.distributed import Client
+    # client = Client(<your.cluster.scheduler.address>)
+    client = None
+
+    study = optuna_distributed.from_study(optuna.create_study(direction="maximize"), client=client)
     study.optimize(objective, n_trials=100)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
