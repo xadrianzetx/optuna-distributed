@@ -56,3 +56,8 @@ if __name__ == "__main__":
     study.optimize(objective, n_trials=20)
     worker = study.best_trial.user_attrs["worker"]
     print(f"Best value: {study.best_value} (params: {study.best_params}) calculated by {worker}\n")
+
+    # We can specify the timeout.
+    print("Running additional trials in 2 seconds...")
+    study.optimize(objective, n_trials=100, timeout=2.0)
+    print("Best value: {} (params: {})\n".format(study.best_value, study.best_params))
