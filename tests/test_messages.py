@@ -35,7 +35,7 @@ class MockConnection(IPCPrimitive):
         self._manager = manager
 
     def get(self) -> "Message":
-        ...
+        return HeartbeatMessage()
 
     def put(self, message: Message) -> None:
         assert isinstance(message, ResponseMessage)
@@ -57,7 +57,7 @@ class MockOptimizationManager(OptimizationManager):
         ...
 
     def get_message(self) -> Generator["Message", None, None]:
-        ...
+        yield HeartbeatMessage()
 
     def after_message(self, event_loop: "EventLoop") -> None:
         ...
@@ -69,7 +69,7 @@ class MockOptimizationManager(OptimizationManager):
         ...
 
     def should_end_optimization(self) -> bool:
-        ...
+        return True
 
     def register_trial_exit(self, trial_id: int) -> None:
         self.trial_exit_called = True
