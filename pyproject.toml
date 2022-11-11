@@ -9,7 +9,7 @@ authors = [
   { name = "Adrian Zuber", email = "xadrianzetx@gmail.com" },
 ]
 requires-python = ">=3.7"
-license = { file = "LICENSE" }
+license = { text = "MIT" }
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
