@@ -15,7 +15,6 @@ import uuid
 
 from dask.distributed import Client
 from dask.distributed import Future
-from dask.distributed import LocalCluster
 from dask.distributed import Variable
 from optuna.exceptions import TrialPruned
 from optuna.study import Study
@@ -103,7 +102,6 @@ class DistributedOptimizationManager(OptimizationManager):
         self._completed_trials = 0
         self._public_channel = str(uuid.uuid4())
         self._synchronizer = _StateSynchronizer()
-        self._is_cluster_remote = not isinstance(client.cluster, LocalCluster)
 
         # Manager has write access to its own message queue as a sort of health check.
         # Basically that means we can pump event loop from callbacks running in
@@ -148,7 +146,7 @@ class DistributedOptimizationManager(OptimizationManager):
         return trials_with_context
 
     def create_futures(self, study: Study, objective: ObjectiveFuncType) -> None:
-        distributable = _distributable(objective, with_supervisor=self._is_cluster_remote)
+        distributable = _distributable(objective)
         trials = self._add_task_context(self._create_trials(study))
         self._futures = self._client.map(distributable, trials, pure=False)
         for future in self._futures:
@@ -178,13 +176,11 @@ class DistributedOptimizationManager(OptimizationManager):
         return Queue(self._private_channels[trial_id])
 
     def stop_optimization(self) -> None:
-        # Only want to cleanup cluster that does not belong to us.
-        # TODO(xadrianzetx) Notebooks might be a special case (cleanup even with LocalCluster).
         self._client.cancel(self._futures)
-        if self._is_cluster_remote:
-            # Twice the timeout of task connection.
-            # This way even tasks waiting for message will have chance to exit.
-            self._synchronizer.emit_stop_and_wait(patience=10)
+        # Twice the timeout of task connection.
+        # This way even tasks waiting for message will have chance to exit.
+        # TODO(xadrianzetx) Accept patience as an argument to `stop_optimization`.
+        self._synchronizer.emit_stop_and_wait(patience=10)
 
     def should_end_optimization(self) -> bool:
         return self._completed_trials == self._n_trials
@@ -193,7 +189,7 @@ class DistributedOptimizationManager(OptimizationManager):
         self._completed_trials += 1
 
 
-def _distributable(func: ObjectiveFuncType, with_supervisor: bool) -> DistributableWithContext:
+def _distributable(func: ObjectiveFuncType) -> DistributableWithContext:
     def _wrapper(context: _TaskContext) -> None:
         task_state = Variable(context.state_id)
         if task_state.get() != _TaskState.WAITING:
@@ -203,10 +199,8 @@ def _distributable(func: ObjectiveFuncType, with_supervisor: bool) -> Distributa
         message: Message
 
         try:
-            if with_supervisor:
-                args = (threading.get_ident(), context)
-                Thread(target=_task_supervisor, args=args, daemon=True).start()
-
+            args = (threading.get_ident(), context)
+            Thread(target=_task_supervisor, args=args, daemon=True).start()
             value_or_values = func(context.trial)
             message = CompletedMessage(context.trial.trial_id, value_or_values)
             context.trial.connection.put(message)

@@ -134,7 +134,7 @@ def test_distributed_task_deduped(client: Client) -> None:
 
     # Simulate scenario where task run was repeated.
     # https://stackoverflow.com/a/41965766
-    func = _distributable(_objective, with_supervisor=False)
+    func = _distributable(_objective)
     context = _TaskContext(DistributedTrial(0, Mock()), stop_flag="foo", state_id=state_id)
     for _ in range(5):
         client.submit(func, context).result()

@@ -12,6 +12,7 @@ from typing import Type
 from typing import Union
 
 from dask.distributed import Client
+from dask.distributed import LocalCluster
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -174,7 +175,7 @@ class DistributedStudy:
         terminal = Terminal(show_progress_bar, n_trials, timeout)
         manager = (
             DistributedOptimizationManager(self._client, n_trials)
-            if self._client is not None
+            if self._client is not None and not isinstance(self._client.cluster, LocalCluster)
             else LocalOptimizationManager(n_trials, n_jobs)
         )
 
