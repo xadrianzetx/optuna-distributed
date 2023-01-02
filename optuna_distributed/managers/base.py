@@ -44,18 +44,6 @@ class OptimizationManager(ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def before_message(self, event_loop: "EventLoop") -> None:
-        """A hook allowing to run additional operations before recieved
-        message is processed.
-
-        Args:
-            event_loop:
-                An instance of :class:`~optuna_distributed.eventloop.EventLoop`
-                providing context to study and manager.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def get_message(self) -> Generator[Message, None, None]:
         """Fetches incoming messages from workers."""
         raise NotImplementedError

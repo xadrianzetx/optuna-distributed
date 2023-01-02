@@ -61,7 +61,6 @@ class EventLoop:
         self.manager.create_futures(self.study, self.objective)
         for message in self.manager.get_message():
             try:
-                self.manager.before_message(self)
                 message.process(self.study, self.manager)
                 self.manager.after_message(self)
 
