@@ -152,9 +152,6 @@ class DistributedOptimizationManager(OptimizationManager):
         for future in self._futures:
             future.add_done_callback(self._ensure_safe_exit)
 
-    def before_message(self, event_loop: "EventLoop") -> None:
-        ...
-
     def get_message(self) -> Generator[Message, None, None]:
         while True:
             try:

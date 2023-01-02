@@ -65,9 +65,6 @@ class LocalOptimizationManager(OptimizationManager):
             self._pool[trial_id] = master
             worker.close()
 
-    def before_message(self, event_loop: "EventLoop") -> None:
-        ...
-
     def get_message(self) -> Generator[Message, None, None]:
         while True:
             messages: List[Message] = []
