@@ -86,7 +86,7 @@ def test_distributed_stops_optimziation(client: Client) -> None:
     manager = DistributedOptimizationManager(client, n_trials=5)
     manager.create_futures(study, _objective)
     stopped_at = time.time()
-    manager.stop_optimization()
+    manager.stop_optimization(patience=10.0)
     interrupted_execution_time = time.time() - stopped_at
     assert interrupted_execution_time < uninterrupted_execution_time
     for future in manager._futures:
@@ -214,7 +214,7 @@ def test_local_stops_optimziation() -> None:
     manager = LocalOptimizationManager(n_trials=10, n_jobs=1)
     manager.create_futures(study, _objective)
     stopped_at = time.time()
-    manager.stop_optimization()
+    manager.stop_optimization(patience=10.0)
     interrupted_execution_time = time.time() - stopped_at
     assert interrupted_execution_time < uninterrupted_execution_time
     for process in manager._processes:

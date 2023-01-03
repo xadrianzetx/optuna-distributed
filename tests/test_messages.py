@@ -65,7 +65,7 @@ class MockOptimizationManager(OptimizationManager):
     def get_connection(self, trial_id: int) -> "IPCPrimitive":
         return MockConnection(self)
 
-    def stop_optimization(self) -> None:
+    def stop_optimization(self, patience: float) -> None:
         ...
 
     def should_end_optimization(self) -> bool:
