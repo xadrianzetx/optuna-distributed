@@ -27,6 +27,8 @@ class EventLoop:
             An instance of :class:`~optuna_distributed.managers.Manager`.
         objective:
             An objective function to optimize.
+        interrupt_patience:
+            Specifies how many seconds to wait for trials to exit ater interrupt has been emitted.
     """
 
     def __init__(
@@ -34,10 +36,12 @@ class EventLoop:
         study: Study,
         manager: OptimizationManager,
         objective: ObjectiveFuncType,
+        interrupt_patience: float,
     ) -> None:
         self.study = study
         self.manager = manager
         self.objective = objective
+        self._interrupt_patience = interrupt_patience
 
     def run(
         self,
@@ -67,14 +71,14 @@ class EventLoop:
             except Exception as e:
                 if not isinstance(e, catch):
                     with terminal.spin_while_trials_interrupted():
-                        self.manager.stop_optimization()
+                        self.manager.stop_optimization(patience=self._interrupt_patience)
                         self._fail_unfinished_trials()
                     raise
 
             elapsed = (datetime.now() - time_start).total_seconds()
             if timeout is not None and elapsed > timeout:
                 with terminal.spin_while_trials_interrupted():
-                    self.manager.stop_optimization()
+                    self.manager.stop_optimization(patience=self._interrupt_patience)
                 break
 
             if message.closing:

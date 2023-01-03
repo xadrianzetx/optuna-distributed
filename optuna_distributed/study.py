@@ -180,12 +180,12 @@ class DistributedStudy:
         )
 
         try:
-            event_loop = EventLoop(self._study, manager, objective=func)
+            event_loop = EventLoop(self._study, manager, objective=func, interrupt_patience=10.0)
             event_loop.run(terminal, timeout, catch)
 
         except KeyboardInterrupt:
             with terminal.spin_while_trials_interrupted():
-                manager.stop_optimization()
+                manager.stop_optimization(patience=10.0)
 
             states = (TrialState.RUNNING, TrialState.WAITING)
             trials = self._study.get_trials(deepcopy=False, states=states)
