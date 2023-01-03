@@ -95,11 +95,11 @@ class LocalOptimizationManager(OptimizationManager):
     def get_connection(self, trial_id: int) -> IPCPrimitive:
         return Pipe(self._pool[trial_id])
 
-    def stop_optimization(self) -> None:
+    def stop_optimization(self, patience: float) -> None:
         for process in self._processes:
             if process.is_alive():
                 process.kill()
-                process.join(timeout=10.0)
+                process.join(timeout=patience)
 
     def should_end_optimization(self) -> bool:
         return len(self._pool) == 0 and self._trials_remaining == 0

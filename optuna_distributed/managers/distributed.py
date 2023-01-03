@@ -71,7 +71,7 @@ class _StateSynchronizer:
         self._task_states.append(task_state)
         return task_state.name
 
-    def emit_stop_and_wait(self, patience: int) -> None:
+    def emit_stop_and_wait(self, patience: float) -> None:
         self._optimization_enabled.set(False)
         disabled_at = time.time()
         while any(state.get() == _TaskState.RUNNING for state in self._task_states):
@@ -172,12 +172,9 @@ class DistributedOptimizationManager(OptimizationManager):
     def get_connection(self, trial_id: int) -> IPCPrimitive:
         return Queue(self._private_channels[trial_id])
 
-    def stop_optimization(self) -> None:
+    def stop_optimization(self, patience: float) -> None:
         self._client.cancel(self._futures)
-        # Twice the timeout of task connection.
-        # This way even tasks waiting for message will have chance to exit.
-        # TODO(xadrianzetx) Accept patience as an argument to `stop_optimization`.
-        self._synchronizer.emit_stop_and_wait(patience=10)
+        self._synchronizer.emit_stop_and_wait(patience)
 
     def should_end_optimization(self) -> bool:
         return self._completed_trials == self._n_trials

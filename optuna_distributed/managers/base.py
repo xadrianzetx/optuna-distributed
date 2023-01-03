@@ -72,8 +72,14 @@ class OptimizationManager(ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def stop_optimization(self) -> None:
-        """Stops all running trials and sets thier statuses to failed."""
+    def stop_optimization(self, patience: float) -> None:
+        """Stops all running trials and sets thier statuses to failed.
+
+        Args:
+            patience:
+                Specifies how many seconds to wait for trials to exit
+                ater interrupt has been emitted.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
