@@ -1,5 +1,7 @@
+import asyncio
 from multiprocessing import Process
 from multiprocessing.connection import Pipe as MultiprocessingPipe
+import time
 
 from dask.distributed import Client
 from dask.distributed import wait
@@ -50,3 +52,37 @@ def test_queue_publishing_only(client: Client) -> None:
     q = Queue("foo")
     with pytest.raises(RuntimeError):
         q.get()
+
+
+def test_queue_raises_on_timeout_and_backoff(client: Client) -> None:
+    with pytest.raises(ValueError):
+        Queue("foo", timeout=1, max_retries=1)
+
+
+def test_queue_raises_after_timeout(client: Client) -> None:
+    q = Queue("foo", "bar", timeout=1)
+    with pytest.raises(asyncio.TimeoutError):
+        q.get()
+
+
+def test_queue_raises_after_retries(client: Client) -> None:
+    q = Queue("foo", "bar", max_retries=1)
+    with pytest.raises(asyncio.TimeoutError):
+        q.get()
+
+
+def test_queue_get_delayed_message(client: Client) -> None:
+    public = "public"
+    private = "private"
+    future = client.submit(_ping_pong, Queue(public, private, max_retries=5))
+    master = Queue(private, public)
+
+    # Force worker to retry getting message at least once.
+    time.sleep(2.0)
+    master.put(ResponseMessage(0, "ping"))
+    response = master.get()
+    assert isinstance(response, ResponseMessage)
+    assert response.data == "pong"
+    wait(future)
+    assert future.done()
+    assert future.status == "finished"

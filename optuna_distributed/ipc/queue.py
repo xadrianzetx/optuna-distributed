@@ -1,3 +1,4 @@
+import asyncio
 import pickle
 from typing import Optional
 
@@ -20,7 +21,11 @@ class Queue(IPCPrimitive):
             A name of the queue used to recieve messages from.
         timeout:
             Time (in seconds) to wait for message to be fetched
-            before raising an exception.
+            before raising an exception. Should not be set if
+            `max_retries` is used.
+        max_retries:
+            Specifies maximum number of attempts to fetch a message.
+            After each attempt, timeout is extended exponentially.
     """
 
     def __init__(
@@ -28,10 +33,16 @@ class Queue(IPCPrimitive):
         publishing: str,
         recieving: Optional[str] = None,
         timeout: Optional[int] = None,
+        max_retries: Optional[int] = None,
     ) -> None:
         self._publishing = publishing
         self._recieving = recieving
+
+        if max_retries is not None and timeout is not None:
+            raise ValueError("Exponentially growing timeout is used when `max_retries` is set.")
+
         self._timeout = timeout
+        self._max_retries = max_retries
         self._publisher: Optional[DaskQueue] = None
         self._subscriber: Optional[DaskQueue] = None
         self._initialized = False
@@ -49,7 +60,17 @@ class Queue(IPCPrimitive):
         self._initialize()
         if self._subscriber is None:
             raise RuntimeError("Trying to get message with publish-only connection.")
-        return pickle.loads(self._subscriber.get(timeout=self._timeout))
+
+        attempt = 0
+        while True:
+            try:
+                timeout = self._timeout if self._max_retries is None else 2**attempt
+                return pickle.loads(self._subscriber.get(timeout))
+
+            except asyncio.TimeoutError:
+                attempt += 1
+                if self._max_retries is None or attempt == self._max_retries:
+                    raise
 
     def put(self, message: Message) -> None:
         self._initialize()
