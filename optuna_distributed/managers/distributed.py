@@ -124,7 +124,7 @@ class DistributedOptimizationManager(OptimizationManager):
     def _assign_private_channel(self, trial_id: int) -> "Queue":
         private_channel = str(uuid.uuid4())
         self._private_channels[trial_id] = private_channel
-        return Queue(self._public_channel, private_channel, timeout=5)
+        return Queue(self._public_channel, private_channel, max_retries=5)
 
     def _create_trials(self, study: Study) -> List[DistributedTrial]:
         # HACK: It's kinda naughty to access _trial_id, but this is gonna make
