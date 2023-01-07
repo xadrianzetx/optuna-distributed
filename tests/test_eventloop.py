@@ -34,7 +34,7 @@ def test_catches_on_trial_exception() -> None:
     )
 
 
-def test_stops_optimization() -> None:
+def test_stops_optimization_after_timeout() -> None:
     uninterrupted_execution_time = 60.0
 
     def _objective(trial: DistributedTrial) -> float:
