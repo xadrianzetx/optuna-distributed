@@ -77,7 +77,8 @@ def test_queue_get_delayed_message(client: Client) -> None:
     future = client.submit(_ping_pong, Queue(public, private, max_retries=5))
     master = Queue(private, public)
 
-    # Force worker to retry getting message at least once.
+    # With exponential timeout, attempts are made after 1, 3, 7, 15... seconds.
+    # To ensure at least one retry, message should be delayed between 1 and 3 seconds.
     time.sleep(2.0)
     master.put(ResponseMessage(0, "ping"))
     response = master.get()
