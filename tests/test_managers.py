@@ -93,7 +93,7 @@ def test_distributed_stops_optimziation(client: Client) -> None:
         assert future.cancelled()
 
     for task_state in manager._synchronizer._task_states:
-        assert task_state.get() != _TaskState.RUNNING
+        assert _TaskState(task_state.get()) is not _TaskState.RUNNING
 
 
 def test_distributed_connection_management(client: Client) -> None:
@@ -158,7 +158,7 @@ def test_synchronizer_emits_stop() -> None:
 def test_synchronizer_states_created() -> None:
     synchronizer = _StateSynchronizer()
     states = [Variable(synchronizer.set_initial_state()) for _ in range(10)]
-    assert all(state.get() == _TaskState.WAITING for state in states)
+    assert all(_TaskState(state.get()) is _TaskState.WAITING for state in states)
 
 
 def test_synchronizer_timeout() -> None:

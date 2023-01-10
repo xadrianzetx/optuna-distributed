@@ -74,7 +74,7 @@ class _StateSynchronizer:
     def emit_stop_and_wait(self, patience: float) -> None:
         self._optimization_enabled.set(False)
         disabled_at = time.time()
-        while any(state.get() == _TaskState.RUNNING for state in self._task_states):
+        while any(_TaskState(state.get()) is _TaskState.RUNNING for state in self._task_states):
             if time.time() - disabled_at > patience:
                 raise TimeoutError("Timed out while trying to interrupt running tasks.")
             time.sleep(0.1)
@@ -186,7 +186,7 @@ class DistributedOptimizationManager(OptimizationManager):
 def _distributable(func: ObjectiveFuncType) -> DistributableWithContext:
     def _wrapper(context: _TaskContext) -> None:
         task_state = Variable(context.state_id)
-        if task_state.get() != _TaskState.WAITING:
+        if _TaskState(task_state.get()) is not _TaskState.WAITING:
             return
 
         task_state.set(_TaskState.RUNNING)
@@ -223,7 +223,7 @@ def _task_supervisor(thread_id: int, context: _TaskContext) -> None:
     task_state = Variable(context.state_id)
     while True:
         time.sleep(0.1)
-        if task_state.get() == _TaskState.FINISHED:
+        if _TaskState(task_state.get()) is _TaskState.FINISHED:
             break
 
         if not optimization_enabled.get():
