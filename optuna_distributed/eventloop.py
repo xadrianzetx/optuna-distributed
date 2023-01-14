@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Any
 from typing import Optional
 from typing import Tuple
 from typing import Type
@@ -48,8 +47,6 @@ class EventLoop:
         terminal: Terminal,
         timeout: Optional[float] = None,
         catch: Tuple[Type[Exception], ...] = (),
-        *args: Any,
-        **kwargs: Any,
     ) -> None:
         """Starts the event loop.
 
