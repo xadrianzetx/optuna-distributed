@@ -1,3 +1,4 @@
+import sys
 import time
 
 import optuna
@@ -7,6 +8,11 @@ from optuna_distributed.eventloop import EventLoop
 from optuna_distributed.managers import LocalOptimizationManager
 from optuna_distributed.terminal import Terminal
 from optuna_distributed.trial import DistributedTrial
+
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="Local optimization not supported on Windows."
+)
 
 
 def _objective_raises(trial: DistributedTrial) -> float:

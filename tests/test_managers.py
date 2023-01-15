@@ -174,6 +174,7 @@ def _objective_local_get_message(trial: DistributedTrial) -> float:
     return 0.0
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Local optimization not supported on Windows.")
 def test_local_get_message() -> None:
     n_trials = 1
     study = optuna.create_study()
@@ -191,6 +192,7 @@ def _objective_local_should_end_optimization(trial: DistributedTrial) -> float:
     return 0.0
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Local optimization not supported on Windows.")
 def test_local_should_end_optimization() -> None:
     n_trials = 1
     study = optuna.create_study()
@@ -214,6 +216,7 @@ def _objective_local_stops_optimziation(trial: DistributedTrial) -> float:
     return 0.0
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Local optimization not supported on Windows.")
 def test_local_stops_optimziation() -> None:
     uninterrupted_execution_time = 5.0
     study = optuna.create_study()
@@ -235,6 +238,7 @@ def _objective_local_connection_management(trial: DistributedTrial) -> float:
     return 0.0
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Local optimization not supported on Windows.")
 def test_local_connection_management() -> None:
     n_trials = 1
     study = optuna.create_study()
@@ -257,6 +261,7 @@ def _objective_local_worker_pool_management(trial: DistributedTrial) -> float:
     return 0.0
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Local optimization not supported on Windows.")
 def test_local_worker_pool_management() -> None:
     @dataclass
     class _MockEventLoop:
