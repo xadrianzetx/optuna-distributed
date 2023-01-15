@@ -169,15 +169,17 @@ def test_synchronizer_timeout() -> None:
         synchronizer.emit_stop_and_wait(0)
 
 
-def test_local_get_message() -> None:
-    def _objective(trial: DistributedTrial) -> float:
-        trial.connection.put(ResponseMessage(0, data=None))
-        return 0.0
+def _objective_local_get_message(trial: DistributedTrial) -> float:
+    trial.connection.put(ResponseMessage(0, data=None))
+    return 0.0
 
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Local optimization not supported on Windows.")
+def test_local_get_message() -> None:
     n_trials = 1
     study = optuna.create_study()
     manager = LocalOptimizationManager(n_trials, n_jobs=1)
-    manager.create_futures(study, _objective)
+    manager.create_futures(study, _objective_local_get_message)
     completed = 0
     for message in manager.get_message():
         assert isinstance(message, ResponseMessage)
@@ -186,11 +188,16 @@ def test_local_get_message() -> None:
             break
 
 
+def _objective_local_should_end_optimization(trial: DistributedTrial) -> float:
+    return 0.0
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Local optimization not supported on Windows.")
 def test_local_should_end_optimization() -> None:
     n_trials = 1
     study = optuna.create_study()
     manager = LocalOptimizationManager(n_trials, n_jobs=1)
-    manager.create_futures(study, lambda trial: 0.0)
+    manager.create_futures(study, _objective_local_should_end_optimization)
     closing_messages_recieved = 0
     for message in manager.get_message():
         if message.closing:
@@ -203,16 +210,18 @@ def test_local_should_end_optimization() -> None:
     assert closing_messages_recieved == n_trials
 
 
+def _objective_local_stops_optimziation(trial: DistributedTrial) -> float:
+    uninterrupted_execution_time = 5.0
+    time.sleep(uninterrupted_execution_time)
+    return 0.0
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Local optimization not supported on Windows.")
 def test_local_stops_optimziation() -> None:
     uninterrupted_execution_time = 5.0
-
-    def _objective(trial: DistributedTrial) -> float:
-        time.sleep(uninterrupted_execution_time)
-        return 0.0
-
     study = optuna.create_study()
     manager = LocalOptimizationManager(n_trials=10, n_jobs=1)
-    manager.create_futures(study, _objective)
+    manager.create_futures(study, _objective_local_stops_optimziation)
     stopped_at = time.time()
     manager.stop_optimization(patience=10.0)
     interrupted_execution_time = time.time() - stopped_at
@@ -221,18 +230,20 @@ def test_local_stops_optimziation() -> None:
         assert not process.is_alive()
 
 
-def test_local_connection_management() -> None:
-    def _objective(trial: DistributedTrial) -> float:
-        requested = trial.connection.get()
-        assert isinstance(requested, ResponseMessage)
-        data = {"requested": requested.data, "actual": trial.trial_id}
-        trial.connection.put(ResponseMessage(trial.trial_id, data))
-        return 0.0
+def _objective_local_connection_management(trial: DistributedTrial) -> float:
+    requested = trial.connection.get()
+    assert isinstance(requested, ResponseMessage)
+    data = {"requested": requested.data, "actual": trial.trial_id}
+    trial.connection.put(ResponseMessage(trial.trial_id, data))
+    return 0.0
 
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Local optimization not supported on Windows.")
+def test_local_connection_management() -> None:
     n_trials = 1
     study = optuna.create_study()
     manager = LocalOptimizationManager(n_trials, n_jobs=1)
-    manager.create_futures(study, _objective)
+    manager.create_futures(study, _objective_local_connection_management)
     for trial in study.get_trials(deepcopy=False):
         connection = manager.get_connection(trial._trial_id)
         connection.put(ResponseMessage(0, data=trial._trial_id))
@@ -246,10 +257,12 @@ def test_local_connection_management() -> None:
             break
 
 
-def test_local_worker_pool_management() -> None:
-    def _objective(trial: DistributedTrial) -> float:
-        return 0.0
+def _objective_local_worker_pool_management(trial: DistributedTrial) -> float:
+    return 0.0
 
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Local optimization not supported on Windows.")
+def test_local_worker_pool_management() -> None:
     @dataclass
     class _MockEventLoop:
         study: optuna.Study
@@ -257,9 +270,9 @@ def test_local_worker_pool_management() -> None:
 
     study = optuna.create_study()
     manager = LocalOptimizationManager(n_trials=10, n_jobs=-1)
-    eventloop = _MockEventLoop(study, _objective)
+    eventloop = _MockEventLoop(study, _objective_local_worker_pool_management)
 
-    manager.create_futures(study, _objective)
+    manager.create_futures(study, _objective_local_worker_pool_management)
     for message in manager.get_message():
         message.process(study, manager)
         manager.after_message(eventloop)  # type: ignore
