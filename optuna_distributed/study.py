@@ -1,3 +1,4 @@
+import sys
 from typing import Any
 from typing import Callable
 from typing import Container
@@ -178,6 +179,12 @@ class DistributedStudy:
             if self._client is not None and not isinstance(self._client.cluster, LocalCluster)
             else LocalOptimizationManager(n_trials, n_jobs)
         )
+
+        if isinstance(manager, LocalOptimizationManager) and sys.platform == "win32":
+            raise ValueError(
+                "Local asynchronous optimization is currently not supported on Windows. "
+                "Please specify Dask client to continue in distributed mode."
+            )
 
         try:
             event_loop = EventLoop(self._study, manager, objective=func, interrupt_patience=10.0)
