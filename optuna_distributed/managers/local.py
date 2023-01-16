@@ -67,6 +67,9 @@ class LocalOptimizationManager(OptimizationManager):
         while True:
             messages: List[Message] = []
             for incoming in wait(self._pool.values(), timeout=10):
+                # FIXME: This assertion is true only for Unix systems.
+                # Some refactoring is needed to support Windows as well.
+                # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.wait
                 assert isinstance(incoming, Connection)
                 try:
                     message = incoming.recv()
