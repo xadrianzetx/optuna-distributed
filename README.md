@@ -18,7 +18,7 @@ An extension to [Optuna](https://github.com/optuna/optuna) which makes distribut
 ```sh
 pip install optuna-distributed
 ```
-Optuna-distributed requires Python 3.7 or newer.
+Optuna-distributed requires Python 3.8 or newer.
 
 ## Basic example
 Optuna-distributed wraps standard Optuna study. The resulting object behaves just like regular study, but optimization process is asynchronous. Depending on setup of [Dask client](https://docs.dask.org/en/stable/10-minutes-to-dask.html#scheduling), each trial is scheduled to run on available CPU core on local machine, or physical worker in cluster.
