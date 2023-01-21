@@ -1,8 +1,8 @@
+from typing import Literal
 from typing import TYPE_CHECKING
 
 from optuna.study import Study
 from optuna.trial import Trial
-from typing_extensions import Literal
 
 from optuna_distributed.messages import Message
 from optuna_distributed.messages.response import ResponseMessage

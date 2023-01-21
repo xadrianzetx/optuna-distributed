@@ -29,13 +29,10 @@ classifiers = [
   "Topic :: System :: Distributed Computing",
 ]
 
-# TODO(xadrianzetx) Remove typing-extensions when Python 3.7 is out of support.
-# We are using typing-extensions because of typing.Literal.
 dependencies = [
   "optuna",
   "dask[distributed]",
   "rich",
-  "typing-extensions",
 ]
 dynamic = ["version"]
 
