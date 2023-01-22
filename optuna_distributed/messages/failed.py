@@ -45,8 +45,8 @@ class FailedMessage(Message):
         frozen_trial = study.tell(trial, state=TrialState.FAIL)
         manager.register_trial_exit(self._trial_id)
         _logger.warning(
-            f"Trial {frozen_trial.number} failed because "
-            f"of the following error: {repr(self._exception)}",
+            f"Trial {frozen_trial.number} failed with parameters: {frozen_trial.params} "
+            f"because of the following error: {repr(self._exception)}.",
             exc_info=self._exc_info,
         )
         raise self._exception
