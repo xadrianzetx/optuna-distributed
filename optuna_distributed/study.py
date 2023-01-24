@@ -135,7 +135,7 @@ class DistributedStudy:
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
         n_jobs: int = -1,
-        catch: Tuple[Type[Exception], ...] = (),
+        catch: Union[Iterable[Type[Exception]], Type[Exception]] = (),
         callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
         show_progress_bar: bool = False,
         *args: Any,
@@ -174,6 +174,7 @@ class DistributedStudy:
             raise ValueError("Only finite number of trials supported at the moment.")
 
         terminal = Terminal(show_progress_bar, n_trials, timeout)
+        catch = tuple(catch) if isinstance(catch, Iterable) else (catch,)
         manager = (
             DistributedOptimizationManager(self._client, n_trials)
             if self._client is not None and not isinstance(self._client.cluster, LocalCluster)
