@@ -15,5 +15,5 @@ def _setup_logger() -> None:
 
 
 _setup_logger()
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __all__ = ["from_study"]
