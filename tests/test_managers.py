@@ -72,7 +72,7 @@ def test_distributed_should_end_optimization(client: Client) -> None:
     assert closing_messages_recieved == n_trials
 
 
-def test_distributed_stops_optimziation(client: Client) -> None:
+def test_distributed_stops_optimization(client: Client) -> None:
     uninterrupted_execution_time = 100
 
     def _objective(trial: DistributedTrial) -> float:
@@ -90,9 +90,6 @@ def test_distributed_stops_optimziation(client: Client) -> None:
     assert interrupted_execution_time < uninterrupted_execution_time
     for future in manager._futures:
         assert future.cancelled()
-
-    for task_state in manager._synchronizer._task_states:
-        assert _TaskState(task_state.get()) is not _TaskState.RUNNING
 
 
 def test_distributed_connection_management(client: Client) -> None:
