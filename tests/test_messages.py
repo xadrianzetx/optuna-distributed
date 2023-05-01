@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import logging
 from typing import Any
 from typing import Generator
@@ -12,6 +13,7 @@ from optuna.study import Study
 from optuna.trial import TrialState
 import pytest
 
+import optuna_distributed
 from optuna_distributed.eventloop import EventLoop
 from optuna_distributed.ipc import IPCPrimitive
 from optuna_distributed.managers import ObjectiveFuncType
@@ -80,6 +82,16 @@ def manager() -> MockOptimizationManager:
     return MockOptimizationManager()
 
 
+@contextmanager
+def _forced_log_propagation(logger_name: str) -> Generator[None, None, None]:
+    try:
+        # Local fix for https://github.com/pytest-dev/pytest/issues/3697
+        logging.getLogger(logger_name).propagate = True
+        yield
+    finally:
+        logging.getLogger(logger_name).propagate = False
+
+
 def _message_responds_with(value: Any, manager: MockOptimizationManager) -> bool:
     return manager.message_response == value
 
@@ -89,7 +101,8 @@ def test_completed_with_correct_value(
 ) -> None:
     msg = CompletedMessage(0, 0.0)
     assert msg.closing
-    msg.process(study, manager)
+    with _forced_log_propagation(logger_name=optuna_distributed.__name__):
+        msg.process(study, manager)
     assert manager.trial_exit_called
     assert len(caplog.records) == 1
     assert caplog.records[0].levelno == logging.INFO
@@ -111,7 +124,8 @@ def test_pruned(
 ) -> None:
     msg = PrunedMessage(0, TrialPruned())
     assert msg.closing
-    msg.process(study, manager)
+    with _forced_log_propagation(logger_name=optuna_distributed.__name__):
+        msg.process(study, manager)
     assert manager.trial_exit_called
     assert len(caplog.records) == 1
     assert caplog.records[0].levelno == logging.INFO
@@ -125,9 +139,9 @@ def test_failed(
     exc = ValueError("foo")
     msg = FailedMessage(0, exc, exc_info=MagicMock())
     assert msg.closing
-    with pytest.raises(ValueError):
+    logger_name = optuna_distributed.__name__
+    with pytest.raises(ValueError), _forced_log_propagation(logger_name):
         msg.process(study, manager)
-
     assert manager.trial_exit_called
     assert len(caplog.records) == 1
     assert caplog.records[0].levelno == logging.WARNING
