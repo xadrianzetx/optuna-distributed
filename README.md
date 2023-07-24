@@ -58,3 +58,4 @@ But there's more! All of the core Optuna APIs, including [storages, samplers](ht
 * Support for callbacks and Optuna integration modules.
 * Study APIs such as [`study.stop`](https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.stop) can't be called from trial at the moment.
 * Local asynchronous optimization on Windows machines. Distributed mode is still available.
+* Support for [`optuna.terminator`](https://optuna.readthedocs.io/en/stable/reference/terminator.html).
