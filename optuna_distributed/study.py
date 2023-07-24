@@ -113,6 +113,10 @@ class DistributedStudy:
         """Return system attributes."""
         return self._study.system_attrs
 
+    def into_study(self) -> Study:
+        """Returns regular Optuna study."""
+        return self._study
+
     def get_trials(
         self, deepcopy: bool = True, states: Optional[Container[TrialState]] = None
     ) -> List[FrozenTrial]:
