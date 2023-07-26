@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
 from collections.abc import Generator
 import ctypes
 from dataclasses import dataclass
@@ -10,6 +9,7 @@ import sys
 import threading
 from threading import Thread
 import time
+from typing import Callable
 from typing import TYPE_CHECKING
 import uuid
 
