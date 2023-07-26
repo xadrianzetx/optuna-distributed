@@ -1,8 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 import datetime
 from typing import Any
-from typing import Dict
-from typing import Optional
-from typing import Sequence
 from typing import TypeVar
 
 from optuna.distributions import BaseDistribution
@@ -66,7 +66,7 @@ class DistributedTrial:
         low: float,
         high: float,
         *,
-        step: Optional[float] = None,
+        step: float | None = None,
         log: bool = False,
     ) -> float:
         """Suggest a value for the floating point parameter.
@@ -238,27 +238,27 @@ class DistributedTrial:
         self.connection.put(message)
 
     @property
-    def params(self) -> Dict[str, Any]:
+    def params(self) -> dict[str, Any]:
         """Return parameters to be optimized."""
         return self._get_property("params")
 
     @property
-    def distributions(self) -> Dict[str, BaseDistribution]:
+    def distributions(self) -> dict[str, BaseDistribution]:
         """Return distributions of parameters to be optimized."""
         return self._get_property("distributions")
 
     @property
-    def user_attrs(self) -> Dict[str, Any]:
+    def user_attrs(self) -> dict[str, Any]:
         """Return user attributes."""
         return self._get_property("user_attrs")
 
     @property
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> dict[str, Any]:
         """Return system attributes."""
         return self._get_property("system_attrs")
 
     @property
-    def datetime_start(self) -> Optional[datetime.datetime]:
+    def datetime_start(self) -> datetime.datetime | None:
         """Return start datetime."""
         return self._get_property("datetime_start")
 

@@ -1,12 +1,12 @@
+from __future__ import annotations
+
+from collections.abc import Generator
 import multiprocessing
 from multiprocessing import Pipe as MultiprocessingPipe
 from multiprocessing import Process
 from multiprocessing.connection import Connection
 from multiprocessing.connection import wait
 import sys
-from typing import Dict
-from typing import Generator
-from typing import List
 from typing import TYPE_CHECKING
 
 from optuna import Study
@@ -49,8 +49,8 @@ class LocalOptimizationManager(OptimizationManager):
 
         self._workers_to_spawn = min(self._n_jobs, n_trials)
         self._trials_remaining = n_trials - self._workers_to_spawn
-        self._pool: Dict[int, Connection] = {}
-        self._processes: List[Process] = []
+        self._pool: dict[int, Connection] = {}
+        self._processes: list[Process] = []
 
     def create_futures(self, study: Study, objective: ObjectiveFuncType) -> None:
         trial_ids = [study.ask()._trial_id for _ in range(self._workers_to_spawn)]
@@ -65,7 +65,7 @@ class LocalOptimizationManager(OptimizationManager):
 
     def get_message(self) -> Generator[Message, None, None]:
         while True:
-            messages: List[Message] = []
+            messages: list[Message] = []
             for incoming in wait(self._pool.values(), timeout=10):
                 # FIXME: This assertion is true only for Unix systems.
                 # Some refactoring is needed to support Windows as well.

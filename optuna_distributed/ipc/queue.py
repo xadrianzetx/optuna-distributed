@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import asyncio
 import pickle
-from typing import Optional
 
 from dask.distributed import Queue as DaskQueue
 
@@ -31,9 +32,9 @@ class Queue(IPCPrimitive):
     def __init__(
         self,
         publishing: str,
-        recieving: Optional[str] = None,
-        timeout: Optional[int] = None,
-        max_retries: Optional[int] = None,
+        recieving: str | None = None,
+        timeout: int | None = None,
+        max_retries: int | None = None,
     ) -> None:
         self._publishing = publishing
         self._recieving = recieving
@@ -43,8 +44,8 @@ class Queue(IPCPrimitive):
 
         self._timeout = timeout
         self._max_retries = max_retries
-        self._publisher: Optional[DaskQueue] = None
-        self._subscriber: Optional[DaskQueue] = None
+        self._publisher: DaskQueue | None = None
+        self._subscriber: DaskQueue | None = None
         self._initialized = False
 
     def _initialize(self) -> None:

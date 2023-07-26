@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import abc
 from abc import ABC
+from collections.abc import Generator
 from typing import Callable
-from typing import Generator
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union

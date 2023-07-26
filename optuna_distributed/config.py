@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import logging
-from typing import Optional
 
 from rich.logging import RichHandler
 
 
-_default_handler: Optional[logging.Handler] = None
+_default_handler: logging.Handler | None = None
 
 
 def _get_library_logger() -> logging.Logger:

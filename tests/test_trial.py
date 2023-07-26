@@ -1,6 +1,6 @@
+from __future__ import annotations
+
 from collections import deque
-from typing import Deque
-from typing import List
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -20,8 +20,8 @@ from optuna_distributed.trial import DistributedTrial
 
 class MockIPC(IPCPrimitive):
     def __init__(self) -> None:
-        self.captured: List[Message] = []
-        self.responses: Deque[ResponseMessage] = deque()
+        self.captured: list[Message] = []
+        self.responses: deque[ResponseMessage] = deque()
 
     def get(self) -> "Message":
         return self.responses.popleft()

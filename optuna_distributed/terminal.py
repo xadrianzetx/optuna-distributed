@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 from rich.progress import BarColumn
 from rich.progress import Progress
@@ -22,7 +22,7 @@ class Terminal:
     """
 
     def __init__(
-        self, show_progress_bar: bool, n_trials: int, timeout: Optional[float] = None
+        self, show_progress_bar: bool, n_trials: int, timeout: float | None = None
     ) -> None:
         self._timeout = timeout
         self._progbar = Progress(
