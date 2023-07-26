@@ -1,7 +1,7 @@
+from collections.abc import Generator
 from contextlib import contextmanager
 import logging
 from typing import Any
-from typing import Generator
 from unittest.mock import MagicMock
 
 from optuna.distributions import BaseDistribution

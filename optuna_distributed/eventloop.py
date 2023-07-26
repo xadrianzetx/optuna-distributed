@@ -1,7 +1,6 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
-from typing import Tuple
-from typing import Type
 
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -45,8 +44,8 @@ class EventLoop:
     def run(
         self,
         terminal: Terminal,
-        timeout: Optional[float] = None,
-        catch: Tuple[Type[Exception], ...] = (),
+        timeout: float | None = None,
+        catch: tuple[type[Exception], ...] = (),
     ) -> None:
         """Starts the event loop.
 

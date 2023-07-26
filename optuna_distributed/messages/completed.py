@@ -1,8 +1,9 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 import io
 import logging
-from typing import Sequence
 from typing import TYPE_CHECKING
-from typing import Union
 
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -35,7 +36,7 @@ class CompletedMessage(Message):
 
     closing = True
 
-    def __init__(self, trial_id: int, value_or_values: Union[Sequence[float], float]) -> None:
+    def __init__(self, trial_id: int, value_or_values: Sequence[float] | float) -> None:
         self._trial_id = trial_id
         self._value_or_values = value_or_values
 

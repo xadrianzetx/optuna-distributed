@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import asyncio
+from collections.abc import Callable
+from collections.abc import Generator
 import ctypes
 from dataclasses import dataclass
 from enum import IntEnum
@@ -6,10 +10,6 @@ import sys
 import threading
 from threading import Thread
 import time
-from typing import Callable
-from typing import Dict
-from typing import Generator
-from typing import List
 from typing import TYPE_CHECKING
 import uuid
 
@@ -59,7 +59,7 @@ class _StateSynchronizer:
     def __init__(self) -> None:
         self._optimization_enabled = Variable()
         self._optimization_enabled.set(True)
-        self._task_states: List[Variable] = []
+        self._task_states: list[Variable] = []
 
     @property
     def stop_flag(self) -> str:
@@ -111,8 +111,8 @@ class DistributedOptimizationManager(OptimizationManager):
             recieving=self._public_channel,
             timeout=heartbeat_interval,
         )
-        self._private_channels: Dict[int, str] = {}
-        self._futures: List[Future] = []
+        self._private_channels: dict[int, str] = {}
+        self._futures: list[Future] = []
 
     def _ensure_safe_exit(self, future: Future) -> None:
         if future.status in ["error", "cancelled"]:
@@ -126,14 +126,14 @@ class DistributedOptimizationManager(OptimizationManager):
         self._private_channels[trial_id] = private_channel
         return Queue(self._public_channel, private_channel, max_retries=5)
 
-    def _create_trials(self, study: Study) -> List[DistributedTrial]:
+    def _create_trials(self, study: Study) -> list[DistributedTrial]:
         # HACK: It's kinda naughty to access _trial_id, but this is gonna make
         # our lifes much easier in messaging system.
         trial_ids = [study.ask()._trial_id for _ in range(self._n_trials)]
         return [DistributedTrial(tid, self._assign_private_channel(tid)) for tid in trial_ids]
 
-    def _add_task_context(self, trials: List[DistributedTrial]) -> List[_TaskContext]:
-        trials_with_context: List[_TaskContext] = []
+    def _add_task_context(self, trials: list[DistributedTrial]) -> list[_TaskContext]:
+        trials_with_context: list[_TaskContext] = []
         for trial in trials:
             trials_with_context.append(
                 _TaskContext(

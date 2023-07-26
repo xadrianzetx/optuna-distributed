@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import abc
 from abc import ABC
-from typing import Callable
-from typing import Generator
-from typing import Sequence
+from collections.abc import Callable
+from collections.abc import Generator
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
-from typing import Union
 
 from optuna.study import Study
 
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
     from optuna_distributed.eventloop import EventLoop
 
 
-ObjectiveFuncType = Callable[[DistributedTrial], Union[float, Sequence[float]]]
+ObjectiveFuncType = Callable[[DistributedTrial], float | Sequence[float]]
 DistributableFuncType = Callable[[DistributedTrial], None]
 
 

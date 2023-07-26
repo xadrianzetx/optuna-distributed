@@ -1,16 +1,12 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from collections.abc import Container
+from collections.abc import Iterable
+from collections.abc import Sequence
 import sys
 from typing import Any
-from typing import Callable
-from typing import Container
-from typing import Dict
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import Sequence
 from typing import TYPE_CHECKING
-from typing import Tuple
-from typing import Type
-from typing import Union
 
 from dask.distributed import Client
 from dask.distributed import LocalCluster
@@ -64,12 +60,12 @@ class DistributedStudy:
             process based parallelism.
     """
 
-    def __init__(self, study: Study, client: Optional[Client] = None) -> None:
+    def __init__(self, study: Study, client: Client | None = None) -> None:
         self._study = study
         self._client = client
 
     @property
-    def best_params(self) -> Dict[str, Any]:
+    def best_params(self) -> dict[str, Any]:
         """Return parameters of the best trial in the study."""
         return self._study.best_params
 
@@ -84,7 +80,7 @@ class DistributedStudy:
         return self._study.best_trial
 
     @property
-    def best_trials(self) -> List[FrozenTrial]:
+    def best_trials(self) -> list[FrozenTrial]:
         """Return trials located at the Pareto front in the study."""
         return self._study.best_trials
 
@@ -94,22 +90,22 @@ class DistributedStudy:
         return self._study.direction
 
     @property
-    def directions(self) -> List[StudyDirection]:
+    def directions(self) -> list[StudyDirection]:
         """Return the directions of the study."""
         return self._study.directions
 
     @property
-    def trials(self) -> List[FrozenTrial]:
+    def trials(self) -> list[FrozenTrial]:
         """Return all trials in the study."""
         return self._study.trials
 
     @property
-    def user_attrs(self) -> Dict[str, Any]:
+    def user_attrs(self) -> dict[str, Any]:
         """Return user attributes."""
         return self._study.user_attrs
 
     @property
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> dict[str, Any]:
         """Return system attributes."""
         return self._study.system_attrs
 
@@ -118,8 +114,8 @@ class DistributedStudy:
         return self._study
 
     def get_trials(
-        self, deepcopy: bool = True, states: Optional[Container[TrialState]] = None
-    ) -> List[FrozenTrial]:
+        self, deepcopy: bool = True, states: Container[TrialState] | None = None
+    ) -> list[FrozenTrial]:
         """Return all trials in the study.
 
         For complete documentation, please refer to:
@@ -136,11 +132,11 @@ class DistributedStudy:
     def optimize(
         self,
         func: ObjectiveFuncType,
-        n_trials: Optional[int] = None,
-        timeout: Optional[float] = None,
+        n_trials: int | None = None,
+        timeout: float | None = None,
         n_jobs: int = -1,
-        catch: Union[Iterable[Type[Exception]], Type[Exception]] = (),
-        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
+        catch: Iterable[type[Exception]] | type[Exception] = (),
+        callbacks: list[Callable[["Study", FrozenTrial], None]] | None = None,
         show_progress_bar: bool = False,
         *args: Any,
         **kwargs: Any,
@@ -208,7 +204,7 @@ class DistributedStudy:
         finally:
             self._study._storage.remove_session()
 
-    def ask(self, fixed_distributions: Optional[Dict[str, BaseDistribution]] = None) -> Trial:
+    def ask(self, fixed_distributions: dict[str, BaseDistribution] | None = None) -> Trial:
         """Create a new trial from which hyperparameters can be suggested.
 
         For complete documentation, please refer to:
@@ -222,9 +218,9 @@ class DistributedStudy:
 
     def tell(
         self,
-        trial: Union[Trial, int],
-        values: Optional[Union[float, Sequence[float]]] = None,
-        state: Optional[TrialState] = None,
+        trial: Trial | int,
+        values: float | Sequence[float] | None = None,
+        state: TrialState | None = None,
         skip_if_finished: bool = False,
     ) -> FrozenTrial:
         """Finish a trial created with :func:`~optuna_distributed.study.DistributedStudy.ask`.
@@ -272,7 +268,7 @@ class DistributedStudy:
 
     def trials_dataframe(
         self,
-        attrs: Tuple[str, ...] = (
+        attrs: tuple[str, ...] = (
             "number",
             "value",
             "datetime_start",
@@ -309,8 +305,8 @@ class DistributedStudy:
 
     def enqueue_trial(
         self,
-        params: Dict[str, Any],
-        user_attrs: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any],
+        user_attrs: dict[str, Any] | None = None,
         skip_if_exists: bool = False,
     ) -> None:
         """Enqueue a trial with given parameter values.
@@ -351,7 +347,7 @@ class DistributedStudy:
         self._study.add_trials(trials)
 
 
-def from_study(study: Study, client: Optional[Client] = None) -> DistributedStudy:
+def from_study(study: Study, client: Client | None = None) -> DistributedStudy:
     """Takes regular Optuna study and extends it to :class:`~optuna_distributed.DistributedStudy`.
 
     This creates an object which behaves like regular Optuna study, except trials
