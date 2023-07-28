@@ -52,6 +52,9 @@ test = ["pytest"]
 [tool.setuptools]
 packages = ["optuna_distributed"]
 
+[tool.setuptools.package-data]
+optuna_distributed = ["py.typed"]
+
 [tool.setuptools.dynamic]
 version = { attr = "optuna_distributed.__version__" }
 readme = { file = "README.md" }
